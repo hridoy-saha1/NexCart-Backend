@@ -128,4 +128,9 @@ export class SellerController {
     }
     return res.sendFile(imagePath);
   }
+
+  @Get('/getimage/:name')
+  getImages(@Param('name') name, @Res() res) {
+    res.sendFile(name, { root: './uploads' });
+  }
 }

@@ -1,12 +1,4 @@
-import {
-  IsNotEmpty,
-  IsString,
-  Matches,
-  IsInt,
-  registerDecorator,
-  ValidationOptions,
-  ValidationArguments,
-} from 'class-validator';
+import { IsNotEmpty, IsString, Matches } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateProductDto {
@@ -60,4 +52,3 @@ export class SellerRegistrationDto {
   })
   nidNumber: string;
 }
-
