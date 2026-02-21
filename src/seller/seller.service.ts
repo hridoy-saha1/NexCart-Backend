@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { SellerRegistrationDto } from './seller.dto';
+
 import {
   CreateProductDto,
   UpdateProductDto,
@@ -69,4 +71,32 @@ export class SellerService {
       payoutDetails: dto,
     };
   }
+
+  registerSeller(
+    dto: SellerRegistrationDto,
+    nidImage: Express.Multer.File,
+  ): object {
+    if (!nidImage) {
+      throw new BadRequestException('NID image is required');
+    }
+
+    return {
+      message: 'Seller registered successfully',
+      data: {
+        name: dto.name,
+        email: dto.email,
+        nidNumber: dto.nidNumber,
+        nidImage: {
+          originalName: nidImage.originalname,
+          fileName: nidImage.filename,
+          mimeType: nidImage.mimetype,
+          size: nidImage.size,
+          destination: nidImage.destination,
+          path: nidImage.path,
+        },
+      },
+    };
+  }
 }
+
+//
