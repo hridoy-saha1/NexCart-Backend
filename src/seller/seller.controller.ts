@@ -12,6 +12,7 @@ import {
   ValidationPipe,
   Res,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 
 import type { Response } from 'express';
@@ -43,10 +44,15 @@ export class SellerController {
         if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/i)) {
           cb(null, true);
         } else {
-          cb(new MulterError('LIMIT_UNEXPECTED_FILE', 'image'), false);
+          cb(
+            new BadRequestException(
+              'Only image files (jpg, jpeg, png, webp) are allowed',
+            ),
+            false,
+          );
         }
       },
-      limits: { fileSize: 2 * 1024 * 1024 }, // ✅ 2MB
+      limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
       storage: diskStorage({
         destination: './uploads',
         filename: function (req, file, cb) {
@@ -59,7 +65,7 @@ export class SellerController {
     @Body() dto: SellerRegistrationDto,
     @UploadedFile() nidImage: Express.Multer.File,
   ): object {
-    console.log(dto, nidImage); //for my checking
+    console.log(nidImage); //for my checking
     return this.sellerService.registerSeller(dto, nidImage);
   }
 
@@ -119,16 +125,6 @@ export class SellerController {
   }
 
   //  Show image
-  @Get('image/:img')
-  getImage(@Param('img') img: string, @Res() res: Response) {
-    const imagePath = join(process.cwd(), 'uploads', img);
-
-    if (!fs.existsSync(imagePath)) {
-      throw new NotFoundException('Image not found');
-    }
-    return res.sendFile(imagePath);
-  }
-
   @Get('/getimage/:name')
   getImages(@Param('name') name, @Res() res) {
     res.sendFile(name, { root: './uploads' });
