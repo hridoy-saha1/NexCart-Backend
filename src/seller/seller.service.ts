@@ -39,7 +39,7 @@ export class SellerService {
     }
 
     const seller = this.sellerRepository.create({
-      fullName: dto.name,
+      name: dto.name,
       email: dto.email,
       phone: dto.phone,
       nidNumber: dto.nidNumber,
