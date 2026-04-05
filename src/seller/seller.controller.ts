@@ -1,0 +1,263 @@
+// import {
+//   Controller,
+//   Get,
+//   Post,
+//   Patch,
+//   Delete,
+//   Param,
+//   Body,
+//   UploadedFile,
+//   UseInterceptors,
+//   UsePipes,
+//   ValidationPipe,
+//   Res,
+//   NotFoundException,
+//   BadRequestException,
+// } from '@nestjs/common';
+// import { DataSource } from 'typeorm';
+
+// import type { Response } from 'express';
+// import { join } from 'path';
+// import * as fs from 'fs';
+
+// import { FileInterceptor } from '@nestjs/platform-express';
+// import { MulterError, diskStorage } from 'multer';
+
+// import { SellerService } from './seller.service';
+// import {
+//   CreateProductDto,
+//   UpdateProductDto,
+//   UpdateOrderStatusDto,
+//   PayoutRequestDto,
+//   SellerRegistrationDto,
+//   CreateSellerDto,
+//   UpdateSellerPhoneDto,
+// } from './seller.dto';
+
+// @Controller('seller')
+// export class SellerController {
+//   constructor(
+//     private readonly sellerService: SellerService,
+//     // private readonly dataSource: DataSource,
+//   ) {}
+
+//   // Seller Registration (User Category 1)
+//   @Post('/register')
+//   @UsePipes(new ValidationPipe())
+//   @UseInterceptors(
+//     FileInterceptor('nidImage', {
+//       fileFilter: (req, file, cb) => {
+//         if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/i)) {
+//           cb(null, true);
+//         } else {
+//           cb(
+//             new BadRequestException(
+//               'Only image files (jpg, jpeg, png, webp) are allowed',
+//             ),
+//             false,
+//           );
+//         }
+//       },
+//       limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+//       storage: diskStorage({
+//         destination: './uploads',
+//         filename: function (req, file, cb) {
+//           cb(null, Date.now() + file.originalname);
+//         },
+//       }),
+//     }),
+//   )
+//   registerSeller(
+//     @Body() dto: SellerRegistrationDto,
+//     @UploadedFile() nidImage: Express.Multer.File,
+//   ): object {
+//     console.log(nidImage); //for my checking
+//     return this.sellerService.registerSeller(dto, nidImage);
+//   }
+
+//   //Create Product
+//   @Post('product/create')
+//   createProduct(@Body() obj: CreateProductDto): object {
+//     console.log(obj);
+//     return this.sellerService.createProduct(obj);
+//   }
+
+//   //Update Product
+//   @Patch('product/update/:id')
+//   updateProduct(
+//     @Param('id') id: number,
+//     @Body() dto: UpdateProductDto,
+//   ): object {
+//     return this.sellerService.updateProduct(id, dto);
+//   }
+
+//   // Delete Product
+//   @Delete('product/delete/:id')
+//   deleteProduct(@Param('id') id: number): object {
+//     return this.sellerService.deleteProduct(id);
+//   }
+
+//   //Get  Products
+//   @Get('products')
+//   getMyProducts(): object {
+//     return this.sellerService.getMyProducts();
+//   }
+
+//   //Get Orders
+//   @Get('orders')
+//   getIncomingOrders(): object {
+//     return this.sellerService.getIncomingOrders();
+//   }
+
+//   //Update Order Status
+//   @Patch('orders/update-status/:id')
+//   updateOrderStatus(
+//     @Param('id') id: number,
+//     @Body() dto: UpdateOrderStatusDto,
+//   ): object {
+//     return this.sellerService.updateOrderStatus(id, dto);
+//   }
+
+//   //Sales Analytics
+//   @Get('analytics')
+//   getSalesAnalytics(): object {
+//     return this.sellerService.getSalesAnalytics();
+//   }
+
+//   //  Request Payout
+//   @Post('payout/request')
+//   requestPayout(@Body() dto: PayoutRequestDto): object {
+//     return this.sellerService.requestPayout(dto);
+//   }
+
+//   //  Show image
+//   @Get('/getimage/:name')
+//   getImages(@Param('name') name, @Res() res) {
+//     res.sendFile(name, { root: './uploads' });
+//   }
+// }
+
+//new
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  UploadedFile,
+  UseInterceptors,
+  UsePipes,
+  ValidationPipe,
+  ParseIntPipe,
+  BadRequestException,
+} from '@nestjs/common';
+
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+
+import { SellerService } from './seller.service';
+import { SellerRegistrationDto, UpdateSellerDto } from './seller.dto';
+import { CreateProductDto, UpdateProductDto } from './product.dto';
+
+@Controller('seller')
+export class SellerController {
+  constructor(private readonly sellerService: SellerService) {}
+
+  @Post()
+  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+  @UseInterceptors(
+    FileInterceptor('nidImage', {
+      fileFilter: (req, file, cb) => {
+        if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/i)) {
+          cb(null, true);
+        } else {
+          cb(
+            new BadRequestException(
+              'Only image files (jpg, jpeg, png, webp) are allowed',
+            ),
+            false,
+          );
+        }
+      },
+      limits: { fileSize: 2 * 1024 * 1024 },
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          cb(null, Date.now() + '-' + file.originalname);
+        },
+      }),
+    }),
+  )
+  createSeller(
+    @Body() dto: SellerRegistrationDto,
+    @UploadedFile() nidImage: Express.Multer.File,
+  ) {
+    return this.sellerService.createSeller(dto, nidImage);
+  }
+
+  @Get()
+  getAllSellers() {
+    return this.sellerService.getAllSellers();
+  }
+
+  @Get(':id')
+  getSellerById(@Param('id', ParseIntPipe) id: number) {
+    return this.sellerService.getSellerById(id);
+  }
+
+  @Patch(':id')
+  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+  updateSeller(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateSellerDto,
+  ) {
+    return this.sellerService.updateSeller(id, dto);
+  }
+
+  @Delete(':id')
+  deleteSeller(@Param('id', ParseIntPipe) id: number) {
+    return this.sellerService.deleteSeller(id);
+  }
+
+  @Post('products')
+  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+  createProduct(@Body() dto: CreateProductDto) {
+    return this.sellerService.createProduct(dto);
+  }
+
+  @Get('products')
+  getAllProducts() {
+    return this.sellerService.getAllProducts();
+  }
+
+  @Get('products/:id')
+  getProductById(@Param('id', ParseIntPipe) id: number) {
+    return this.sellerService.getProductById(id);
+  }
+
+  // @Put('products/:id')
+  // @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+  // replaceProduct(
+  //   @Param('id', ParseIntPipe) id: number,
+  //   @Body() dto: UpdateProductDto,
+  // ) {
+  //   return this.sellerService.replaceProduct(id, dto);
+  // }
+
+  @Patch('products/:id')
+  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+  updateProduct(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateProductDto,
+  ) {
+    return this.sellerService.updateProduct(id, dto);
+  }
+
+  @Delete('products/:id')
+  deleteProduct(@Param('id', ParseIntPipe) id: number) {
+    return this.sellerService.deleteProduct(id);
+  }
+}
