@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
-@Entity('customerTable')
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { CartItem } from './cart-item.entity';
+@Entity('customer')
 export class customerEntity {
   @PrimaryGeneratedColumn({ unsigned: true })
   id: number;
@@ -12,4 +13,11 @@ export class customerEntity {
 
   @Column()
   password: string;
+
+  @Column({ nullable: true })
+  profilePic: string;
+
+  @OneToMany(() => CartItem, (cart) => cart.customer)
+  cartItems: CartItem[];
+    orders: any;
 }
