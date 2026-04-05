@@ -19,5 +19,5 @@ export class customerEntity {
 
   @OneToMany(() => CartItem, (cart) => cart.customer)
   cartItems: CartItem[];
-    orders: any;
+  orders: any;
 }

@@ -1,20 +1,11 @@
-//new
-
 import {
-  IsBoolean,
   IsEmail,
   IsNotEmpty,
-  IsNumber,
   IsOptional,
   IsString,
   Matches,
-  Min,
+  MinLength,
 } from 'class-validator';
-import { Type } from 'class-transformer';
-
-// =========================
-// Seller DTOs
-// =========================
 
 export class SellerRegistrationDto {
   @IsString()
@@ -22,24 +13,29 @@ export class SellerRegistrationDto {
   @Matches(/^[A-Za-z\s]+$/, {
     message: 'Name must contain only alphabets and spaces',
   })
-  name: string;
+  name!: string;
 
   @IsEmail({}, { message: 'Email must be valid' })
-  email: string;
+  email!: string;
 
   @IsNotEmpty()
   @IsString()
   @Matches(/^\d+$/, {
     message: 'Phone must contain only digits',
   })
-  phone: string;
+  phone!: string;
 
   @IsNotEmpty()
   @IsString()
   @Matches(/^(\d{10}|\d{15})$/, {
     message: 'NID must be exactly 10 or 15 digits',
   })
-  nidNumber: string;
+  nidNumber!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(6, { message: 'Password must be at least 6 characters long' })
+  password!: string;
 }
 
 export class UpdateSellerDto {
@@ -48,7 +44,7 @@ export class UpdateSellerDto {
   @Matches(/^[A-Za-z\s]+$/, {
     message: 'Full name must contain only alphabets and spaces',
   })
-  fullName?: string;
+  name?: string;
 
   @IsOptional()
   @IsEmail({}, { message: 'Email must be valid' })
@@ -69,52 +65,7 @@ export class UpdateSellerDto {
   nidNumber?: string;
 
   @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
-}
-
-// =========================
-// Product DTOs
-// =========================
-
-export class CreateProductDto {
   @IsString()
-  @IsNotEmpty()
-  productName: string;
-
-  @IsOptional()
-  @IsString()
-  description?: string;
-
-  @Type(() => Number)
-  @IsNumber({}, { message: 'Price must be a number' })
-  @Min(0, { message: 'Price cannot be negative' })
-  price: number;
-
-  @Type(() => Number)
-  @IsNumber({}, { message: 'Quantity must be a number' })
-  @Min(0, { message: 'Quantity cannot be negative' })
-  quantity: number;
-}
-
-export class UpdateProductDto {
-  @IsOptional()
-  @IsString()
-  productName?: string;
-
-  @IsOptional()
-  @IsString()
-  description?: string;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber({}, { message: 'Price must be a number' })
-  @Min(0, { message: 'Price cannot be negative' })
-  price?: number;
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber({}, { message: 'Quantity must be a number' })
-  @Min(0, { message: 'Quantity cannot be negative' })
-  quantity?: number;
+  @MinLength(6, { message: 'Password must be at least 6 characters long' })
+  password?: string;
 }

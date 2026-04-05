@@ -23,9 +23,37 @@ import { SellerService } from './seller.service';
 import { SellerRegistrationDto, UpdateSellerDto } from './seller.dto';
 import { CreateProductDto, UpdateProductDto } from './product.dto';
 
+import { CreateSellerShopDto, UpdateSellerShopDto } from './seller-shop.dto';
+
 @Controller('seller')
 export class SellerController {
   constructor(private readonly sellerService: SellerService) {}
+
+  ///////
+
+  @Post(':sellerId/products')
+  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+  createProductForSeller(
+    @Param('sellerId', ParseIntPipe) sellerId: number,
+    @Body() dto: CreateProductDto,
+  ) {
+    return this.sellerService.createProductForSeller(sellerId, dto);
+  }
+
+  @Get(':sellerId/products')
+  getProductsBySeller(@Param('sellerId', ParseIntPipe) sellerId: number) {
+    return this.sellerService.getProductsBySeller(sellerId);
+  }
+
+  @Post(':sellerId/shop')
+  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+  createSellerShop(
+    @Param('sellerId', ParseIntPipe) sellerId: number,
+    @Body() dto: CreateSellerShopDto,
+  ) {
+    return this.sellerService.createSellerShop(sellerId, dto);
+  }
+  //////
 
   @Post()
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
@@ -62,11 +90,6 @@ export class SellerController {
   @Get()
   getAllSellers() {
     return this.sellerService.getAllSellers();
-  }
-
-  @Get(':id')
-  getSellerById(@Param('id', ParseIntPipe) id: number) {
-    return this.sellerService.getSellerById(id);
   }
 
   @Patch(':id')
@@ -121,4 +144,11 @@ export class SellerController {
   deleteProduct(@Param('id', ParseIntPipe) id: number) {
     return this.sellerService.deleteProduct(id);
   }
+
+  @Get(':id')
+  getSellerById(@Param('id', ParseIntPipe) id: number) {
+    return this.sellerService.getSellerById(id);
+  }
+
+  //
 }

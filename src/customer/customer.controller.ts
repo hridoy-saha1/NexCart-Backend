@@ -11,6 +11,7 @@ import {
   UseInterceptors,
   BadRequestException,
   Put,
+  Patch,
 } from '@nestjs/common';
 import { CustomerService } from './customer.service';
 import { CreateCustomerDto, UpdateProfileDto } from './customer.dto';
@@ -81,20 +82,35 @@ export class CustomerController {
     return this.customerService.searchProduct(name);
   }
   //Relationship start
-  @Post('cart/:productId')
-  addToCart(@Param('productId', ParseIntPipe) productId: number) {
-    return this.customerService.addToCart(productId);
+  @Post('cart/:customerId/:productId')
+  addToCart(
+    @Param('customerId', ParseIntPipe) customerId: number,
+    @Param('productId', ParseIntPipe) productId: number,
+  ) {
+    return this.customerService.addToCart(customerId, productId);
   }
 
-  // ✅ Place order
-  @Post('orders')
-  placeOrder() {
-    return this.customerService.placeOrder();
+  // Place order
+  @Post('orders/:customerId')
+  placeOrder(
+    @Param('customerId', ParseIntPipe) customerId: number,
+    @Body('paymentMethod') paymentMethod: string,
+  ) {
+    return this.customerService.placeOrder(customerId, paymentMethod);
   }
 
-  // ✅ Get order details
+  // Get all orders
   @Get('orders-details')
   getOrders() {
     return this.customerService.getOrderDetails();
+  }
+
+  // Update order status
+  @Patch('orders/:id/status')
+  updateStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('status') status: string,
+  ) {
+    return this.customerService.updateOrderStatus(id, status);
   }
 }

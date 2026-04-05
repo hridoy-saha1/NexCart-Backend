@@ -84,41 +84,51 @@ export class CustomerService {
     });
   }
   //Relationship start
-  async addToCart(productId: number) {
-    const customer = await this.userRepository.findOne({ where: { id: 1 } });
+ async addToCart(customerId: number, productId: number) {
+    const customer = await this.userRepository.findOne({
+      where: { id: customerId },
+    });
     const product = await this.productRepository.findOne({
       where: { id: productId },
+      relations: ['seller'],
     });
 
     if (!customer || !product) throw new BadRequestException('Not found');
 
     let item = await this.cartRepo.findOne({ where: { customer, product } });
-
     if (item) {
       item.quantity += 1;
     } else {
       item = this.cartRepo.create({ customer, product });
     }
-
     return await this.cartRepo.save(item);
   }
 
-  // ✅ Place Order
-  async placeOrder() {
+  // Place order
+  async placeOrder(customerId: number, paymentMethod: string) {
     const customer = await this.userRepository.findOne({
-      where: { id: 1 },
-      relations: ['cartItems', 'cartItems.product'],
+      where: { id: customerId },
+      relations: ['cartItems', 'cartItems.product', 'cartItems.product.seller'],
     });
 
     if (!customer || customer.cartItems.length === 0)
       throw new BadRequestException('Cart empty');
 
-    const order = this.orderRepo.create({ customer });
+    const validMethods = ['cash', 'card', 'bkash', 'nagad'];
+    if (!validMethods.includes(paymentMethod))
+      throw new BadRequestException('Invalid payment method');
+
+    const order = this.orderRepo.create({
+      customer,
+      paymentMethod,
+      status: 'pending',
+    });
 
     order.orderItems = customer.cartItems.map((item) =>
       this.orderItemRepo.create({
         product: item.product,
         quantity: item.quantity,
+        seller: item.product.seller,
       }),
     );
 
@@ -129,10 +139,28 @@ export class CustomerService {
     return order;
   }
 
-  // ✅ Get Orders with Products
+  // Get orders with products + seller
   async getOrderDetails() {
     return await this.orderRepo.find({
-      relations: ['customer', 'orderItems', 'orderItems.product'],
+      relations: [
+        'customer',
+        'orderItems',
+        'orderItems.product',
+        'orderItems.seller',
+      ],
     });
+  }
+
+  // Update order status
+  async updateOrderStatus(orderId: number, status: string) {
+    const order = await this.orderRepo.findOne({ where: { id: orderId } });
+    if (!order) throw new BadRequestException('Order not found');
+
+    const validStatus = ['pending', 'processing', 'delivered', 'cancelled'];
+    if (!validStatus.includes(status))
+      throw new BadRequestException('Invalid status');
+
+    order.status = status;
+    return await this.orderRepo.save(order);
   }
 }
