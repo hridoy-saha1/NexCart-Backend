@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import { CartItem } from 'src/customer/cart-item.entity';
+import { OrderItem } from 'src/customer/order-item.entity';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  OneToMany,
+  ManyToOne,
+} from 'typeorm';
 import { SellerEntity } from './seller.entity';
 
 @Entity('product')
@@ -21,6 +29,11 @@ export class ProductEntity {
   @Column({ type: 'int' })
   quantity: number;
 
+  @OneToMany(() => CartItem, (cart) => cart.product)
+  cartItems: CartItem[];
+
+  @OneToMany(() => OrderItem, (oi) => oi.product)
+  orderItems: OrderItem[];
   @ManyToOne(() => SellerEntity, (seller) => seller.products)
   seller: SellerEntity;
 }
