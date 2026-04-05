@@ -1,26 +1,3 @@
-// import { Entity, Column, BeforeInsert, PrimaryColumn } from 'typeorm';
-
-// @Entity('seller')
-// export class SellerEntity {
-
-//   @PrimaryColumn()
-//   id: string;
-
-//   @BeforeInsert()
-//   generateId(): void {
-//     this.id = `SEL-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-//   }
-
-//   @Column({ type: 'boolean', default: true })
-//   isActive: boolean;
-
-//   @Column({ type: 'varchar', nullable: true })
-//   fullName: string | null;
-
-//   @Column({ type: 'bigint', unsigned: true })
-//   phone: string;
-// }
-
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('seller')
