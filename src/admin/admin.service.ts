@@ -1,125 +1,76 @@
-import { Injectable } from '@nestjs/common';
-import { CreateVendorDto } from './dto/create-vendor.dto';
-import { UpdateVendorStatusDto } from './dto/update-vendor-status.dto';
-import { CreateCategoryDto } from './dto/create-category.dto';
-import { CommissionDto } from './dto/commission.dto';
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, Like } from 'typeorm';
+import { AdminEntity } from './entities/admin.entity';
+import { CreateAdminDto } from './dto/create-admin.dto';
+import { UpdateAdminDto } from './dto/update-admin.dto';
 
 @Injectable()
 export class AdminService {
-  createVendor(dto: CreateVendorDto) {
-    return {
-      success: true,
-      message: 'Vendor created successfully',
-      vendor: {
-        id: 'V-101',
-        name: dto.name,
-        email: dto.email,
-        businessName: dto.businessName,
-        status: 'PENDING',
-      },
-    };
+  constructor(
+    @InjectRepository(AdminEntity)
+    private readonly adminRepo: Repository<AdminEntity>,
+  ) {}
+
+  // CREATE
+  async create(dto: CreateAdminDto): Promise<AdminEntity> {
+    const admin = this.adminRepo.create(dto);
+    return await this.adminRepo.save(admin);
   }
 
-  updateVendorStatus(id: string, dto: UpdateVendorStatusDto) {
-    return {
-      success: true,
-      message: `Vendor ${dto.status}`,
-      vendorId: id,
-      status: dto.status,
-    };
+  // GET ALL
+  async findAll(): Promise<AdminEntity[]> {
+    return await this.adminRepo.find();
   }
 
-  getVendors(page: number, status: string) {
-    return {
-      page: page || 1,
-      filterStatus: status || 'ALL',
-      vendors: [
-        {
-          id: 'V-101',
-          name: 'Tech Store',
-          status: 'APPROVED',
-        },
-        {
-          id: 'V-102',
-          name: 'Fashion Hub',
-          status: 'PENDING',
-        },
-      ],
-    };
+  // SEARCH
+  async search(name: string): Promise<AdminEntity[]> {
+    return await this.adminRepo.find({
+      where: { name: Like(`%${name}%`) },
+    });
   }
 
-  suspendUser(id: string, reason: string) {
-    return {
-      success: true,
-      message: 'User suspended successfully',
-      userId: id,
-      reason,
-    };
+  // GET ONE
+  async findOne(id: number): Promise<AdminEntity> {
+    const admin = await this.adminRepo.findOne({ where: { id } });
+
+    if (!admin) {
+      throw new NotFoundException('Admin not found');
+    }
+
+    return admin;
   }
 
-  createCategory(dto: CreateCategoryDto) {
-    return {
-      success: true,
-      message: 'Category created',
-      category: {
-        id: 'C-101',
-        name: dto.name,
-      },
-    };
+  // PUT (Full update)
+  async update(id: number, dto: CreateAdminDto): Promise<AdminEntity> {
+    const admin: AdminEntity = await this.findOne(id);
+
+    admin.name = dto.name;
+    admin.email = dto.email;
+    admin.password = dto.password;
+    admin.isActive = dto.isActive ?? admin.isActive;
+
+    return await this.adminRepo.save(admin);
   }
 
-  getCategories() {
-    return {
-      categories: [
-        { id: 'C-101', name: 'Electronics' },
-        { id: 'C-102', name: 'Clothing' },
-      ],
-    };
+  // PATCH (Partial update)
+  async partialUpdate(id: number, dto: UpdateAdminDto): Promise<AdminEntity> {
+    const admin: AdminEntity = await this.findOne(id);
+
+    if (dto.name !== undefined) admin.name = dto.name;
+    if (dto.email !== undefined) admin.email = dto.email;
+    if (dto.password !== undefined) admin.password = dto.password;
+    if (dto.isActive !== undefined) admin.isActive = dto.isActive;
+
+    return await this.adminRepo.save(admin);
   }
 
-  getAnalytics() {
-    return {
-      totalSales: 100000,
-      totalUsers: 500,
-      totalOrders: 1200,
-      revenue: 25000,
-    };
-  }
-
-  setCommission(dto: CommissionDto) {
-    return {
-      success: true,
-      message: 'Commission updated',
-      commissionRate: dto.commissionRate,
-    };
-  }
-
-  getOrders(page: number, status: string) {
-    return {
-      page: page || 1,
-      filterStatus: status || 'ALL',
-      orders: [
-        {
-          id: 'O-101',
-          vendor: 'Tech Store',
-          status: 'DELIVERED',
-          amount: 1200,
-        },
-        {
-          id: 'O-102',
-          vendor: 'Fashion Hub',
-          status: 'PENDING',
-          amount: 800,
-        },
-      ],
-    };
-  }
-
-  deleteVendor(id: string) {
-    return {
-      success: true,
-      message: 'Vendor deleted successfully',
-      vendorId: id,
-    };
+  // DELETE
+  async remove(id: number): Promise<void> {
+    const admin: AdminEntity = await this.findOne(id);
+    await this.adminRepo.remove(admin);
   }
 }
