@@ -1,3 +1,5 @@
+import { HttpCode, Res } from '@nestjs/common';
+import type { Response } from 'express';
 //new
 import {
   Controller,
@@ -20,7 +22,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 
 import { SellerService } from './seller.service';
-import { SellerRegistrationDto, UpdateSellerDto } from './seller.dto';
+import { SellerRegistrationDto, UpdateSellerDto, LoginDto } from './seller.dto';
 import { CreateProductDto, UpdateProductDto } from './product.dto';
 
 import { CreateSellerShopDto, UpdateSellerShopDto } from './seller-shop.dto';
@@ -85,6 +87,13 @@ export class SellerController {
     @UploadedFile() nidImage: Express.Multer.File,
   ) {
     return this.sellerService.createSeller(dto, nidImage);
+  }
+
+  @Post('login')
+  @HttpCode(200)
+  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+  login(@Body() dto: LoginDto) {
+    return this.sellerService.loginSeller(dto);
   }
 
   @Get()

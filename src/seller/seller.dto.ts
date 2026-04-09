@@ -69,3 +69,13 @@ export class UpdateSellerDto {
   @MinLength(6, { message: 'Password must be at least 6 characters long' })
   password?: string;
 }
+
+// login.dto.ts
+
+export class LoginDto {
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  password: string;
+}
