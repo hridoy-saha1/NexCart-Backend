@@ -1,3 +1,11 @@
+
+import {
+  UseGuards,
+}
+from '@nestjs/common';
+
+import {JwtAuthGuard} from './jwt-auth.guard';
+
 import {
   Controller,
   Get,
@@ -14,9 +22,10 @@ import {
 } from '@nestjs/common';
 import { RiderService } from './rider.service';
 import { Rider } from './rider.entity';
-import { CreateRiderDto } from './rider.dto';
+import { CreateRiderDto,riderLoginDto } from './rider.dto';
 import { CreateReviewDto } from './review.dto';
 import { Review } from './review.entity';
+import { UpdateOrderStatusDto } from './update-order-status.dto';
 
 
 
@@ -32,7 +41,15 @@ export class RiderController {
     return this.riderService.createRider(dto);
   }
 
+  @Post('login')
+  @UsePipes(new ValidationPipe())
+  login(@Body() dto: riderLoginDto): Promise<object> {
+    return this.riderService.login(dto);
+  }
+
+
   @Patch(':id/status')
+  @UseGuards(JwtAuthGuard)
   changeStatus(
     @Param('id', ParseIntPipe) id: number,
     @Body('status') status: string,
@@ -51,16 +68,19 @@ export class RiderController {
   }
 
   @Get('all-riders')
+  @UseGuards(JwtAuthGuard)
   getAllRiders(): Promise<Rider[]> {
     return this.riderService.getAllRiders();
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   getRider(@Param('id', ParseIntPipe) id: number): Promise<Rider> {
     return this.riderService.getRider(id);
   }
 
   @Put(':id')
+    @UseGuards(JwtAuthGuard)
   updateRider(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CreateRiderDto,
@@ -69,6 +89,7 @@ export class RiderController {
   }
 
   @Delete(':id')
+    @UseGuards(JwtAuthGuard)
   deleteRider(@Param('id', ParseIntPipe) id: number): Promise<Rider> {
     return this.riderService.deleteRider(id);
   }
@@ -77,6 +98,7 @@ export class RiderController {
 // ⭐ Add Review to Rider
 @Post(':id/review')
 @UsePipes(new ValidationPipe())
+  @UseGuards(JwtAuthGuard)
 addReview(
   @Param('id', ParseIntPipe) id: number,
   @Body() dto: CreateReviewDto,
@@ -86,12 +108,24 @@ addReview(
 
 // 📄 Get Rider Reviews
 @Get(':id/reviews')
+  @UseGuards(JwtAuthGuard)
 getReviews(
   @Param('id', ParseIntPipe) id: number,
 ): Promise<Review[]> {
   return this.riderService.getReviews(id);
 }
 
-
+@Patch(':id/order-status')
+  @UseGuards(JwtAuthGuard)
+  updateStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateOrderStatusDto,
+  ) {
+    return this.riderService.updateOrderStatus(
+      id,
+      dto.status,
+      dto.riderId,
+    );
+  }
 
 }
