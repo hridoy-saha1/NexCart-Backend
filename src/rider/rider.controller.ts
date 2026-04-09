@@ -2,80 +2,96 @@ import {
   Controller,
   Get,
   Post,
-  Put,
-  Patch,
-  Delete,
-  Param,
-  Query,
   Body,
+  Param,
+  Delete,
+  Patch,
+  Put,
+  ParseIntPipe,
+  UsePipes,
+  ValidationPipe,
+  BadRequestException
 } from '@nestjs/common';
-
 import { RiderService } from './rider.service';
+import { Rider } from './rider.entity';
+import { CreateRiderDto } from './rider.dto';
+import { CreateReviewDto } from './review.dto';
+import { Review } from './review.entity';
 
-//Import DTOs
-import {
-  CreateRiderDto,
-  UpdateStatusDto,
-  UpdateLocationDto,
-  UpdateAvailabilityDto,
-  CancelDeliveryDto,
-} from './rider.dto';
 
-@Controller('rider')
+
+
+@Controller('riders')
 export class RiderController {
-constructor(private readonly riderService: RiderService) {}
 
-  //Assigned Orders
-  @Get('orders')
-  getAssignedOrders(@Query('status') status: string) {
-    return this.riderService.getAssignedOrders(status);
+  constructor(private readonly riderService: RiderService) {}
+
+  @Post('createRider')
+  @UsePipes(new ValidationPipe())
+  createRider(@Body() dto: CreateRiderDto): Promise<Rider> {
+    return this.riderService.createRider(dto);
   }
 
-  //Single Order
-  @Get('orders/:id')
-  getSingleOrder(@Param('id') id: string) {
-    return this.riderService.getSingleOrder(id);
+  @Patch(':id/status')
+  changeStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('status') status: string,
+  ): Promise<Rider> {
+
+    if (status !== 'available' && status !== 'busy' && status !== 'offline') {
+      throw new BadRequestException('Status must be "available", "busy" or "offline"');
+    }
+
+    return this.riderService.changeStatus(id, status);
   }
 
-  //Accept Delivery
-  @Post('accept')
-  acceptDelivery(@Body() dto: CreateRiderDto) {
-    return this.riderService.acceptRider(dto);
+  @Get('available')
+  getAvailable(): Promise<Rider[]> {
+    return this.riderService.getAvailable();
   }
 
-  //Update Order Status
-  @Put('orders/:id/status')
-  updateStatus(
-    @Param('id') id: string,
-    @Body() dto: UpdateStatusDto,
-  ) {
-    return this.riderService.updateStatus(id, dto);
+  @Get('all-riders')
+  getAllRiders(): Promise<Rider[]> {
+    return this.riderService.getAllRiders();
   }
 
-  //Update Location
-  @Patch('location')
-  updateLocation(@Body() dto: UpdateLocationDto) {
-    return this.riderService.updateLocation(dto);
+  @Get(':id')
+  getRider(@Param('id', ParseIntPipe) id: number): Promise<Rider> {
+    return this.riderService.getRider(id);
   }
 
-  //Toggle Availability
-  @Patch('availability')
-  toggleAvailability(@Body() dto: UpdateAvailabilityDto) {
-    return this.riderService.toggleAvailability(dto);
+  @Put(':id')
+  updateRider(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CreateRiderDto,
+  ): Promise<Rider> {
+    return this.riderService.updateRider(id, dto);
   }
 
-  //Cancel Delivery
-  @Delete('orders/:id')
-  cancelDelivery(
-    @Param('id') id: string,
-    @Body() dto: CancelDeliveryDto,
-  ) {
-    return this.riderService.cancelDelivery(id, dto);
+  @Delete(':id')
+  deleteRider(@Param('id', ParseIntPipe) id: number): Promise<Rider> {
+    return this.riderService.deleteRider(id);
   }
 
-  //View Earnings
-  @Get('earnings')
-  getEarnings(@Query('month') month: string) {
-    return this.riderService.getEarnings(month);
-  }
+//
+// ⭐ Add Review to Rider
+@Post(':id/review')
+@UsePipes(new ValidationPipe())
+addReview(
+  @Param('id', ParseIntPipe) id: number,
+  @Body() dto: CreateReviewDto,
+): Promise<Review[]> {
+  return this.riderService.addReview(id, dto);
+}
+
+// 📄 Get Rider Reviews
+@Get(':id/reviews')
+getReviews(
+  @Param('id', ParseIntPipe) id: number,
+): Promise<Review[]> {
+  return this.riderService.getReviews(id);
+}
+
+
+
 }

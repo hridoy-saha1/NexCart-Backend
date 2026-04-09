@@ -1,84 +1,108 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Rider } from './rider.entity';
 
-// Import DTOs
-import {
-  CreateRiderDto,
-  UpdateStatusDto,
-  UpdateLocationDto,
-  UpdateAvailabilityDto,
-  CancelDeliveryDto,
-} from './rider.dto';
+
+import { Review } from './review.entity';
+
+
+
 
 @Injectable()
 export class RiderService {
 
-  getAssignedOrders(status: string) {
-    return {
-      success: true,
-      message: 'Assigned orders fetched successfully',
-      
-    };
+  constructor(
+    @InjectRepository(Rider)
+    private riderRepository: Repository<Rider>,
+     @InjectRepository(Review)
+  private reviewRepository: Repository<Review>,
+  ) {}
+
+  async createRider(dto: any): Promise<Rider> {
+    return await this.riderRepository.save(dto);
   }
 
-  getSingleOrder(id: string) {
-    return {
-      success: true,
-      message: 'Order fetched successfully',
-      orderId: id,
-    };
+  async changeStatus(
+    id: number,
+    status: 'available' | 'busy' | 'offline',
+  ): Promise<Rider> {
+
+    const rider = await this.riderRepository.findOne({ where: { id } });
+
+    if (!rider) {
+      throw new BadRequestException(`Not Found Your id: ${id}`);
+    }
+
+    rider.status = status;
+    return await this.riderRepository.save(rider);
   }
 
-  acceptRider(dto: CreateRiderDto) {
-    return {
-      success: true,
-      message: 'Rider accepted successfully',
-      data: dto,
-    };
+  async getAvailable(): Promise<Rider[]> {
+    return await this.riderRepository.find({
+      where: { status: 'available' },
+    });
   }
 
-  updateStatus(id: string, dto: UpdateStatusDto) {
-    return {
-      success: true,
-      message: 'Order status updated successfully',
-      orderId: id,
-      newStatus: dto.status,
-    };
+  async getAllRiders(): Promise<Rider[]> {
+    return await this.riderRepository.find();
   }
 
-  updateLocation(dto: UpdateLocationDto) {
-    return {
-      success: true,
-      message: 'Location updated successfully',
-      location: {
-        latitude: dto.latitude,
-        longitude: dto.longitude,
-      },
-    };
+  async getRider(id: number): Promise<Rider> {
+    const rider = await this.riderRepository.findOne({ where: { id } });
+
+    if (!rider) {
+      throw new BadRequestException(`Not Found Your id: ${id}`);
+    }
+
+    return rider;
   }
 
-  toggleAvailability(dto: UpdateAvailabilityDto) {
-    return {
-      success: true,
-      message: 'Availability updated successfully',
-      availability: dto.availability,
-    };
+  async updateRider(id: number, dto: any): Promise<Rider> {
+    const rider = await this.riderRepository.findOne({ where: { id } });
+
+    if (!rider) {
+      throw new BadRequestException(`Not Found Your id: ${id}`);
+    }
+
+    Object.assign(rider, dto);
+    return await this.riderRepository.save(rider);
   }
 
-  cancelDelivery(id: string, dto: CancelDeliveryDto) {
-    return {
-      success: true,
-      message: 'Delivery cancelled successfully',
-      orderId: id,
-      reason: dto.reason || 'No reason provided',
-    };
+  async deleteRider(id: number): Promise<Rider> {
+    const rider = await this.riderRepository.findOne({ where: { id } });
+
+    if (!rider) {
+      throw new BadRequestException(`Not Found Your id: ${id}`);
+    }
+
+    return await this.riderRepository.remove(rider);
   }
 
-  getEarnings(month: string) {
-    return {
-      success: true,
-      message: 'Earnings fetched successfully',
-      month: month || 'Current Month',
-      totalEarnings: 5000,
-    };
+  // 
+async addReview(id: number, dto: any): Promise<Review[]> {
+
+  const rider = await this.riderRepository.findOne({ where: { id } });
+
+  if (!rider) {
+    throw new BadRequestException(`Rider not found with id: ${id}`);
   }
+
+  const review = this.reviewRepository.create({
+    ...dto,
+    rider,
+  });
+
+  return await this.reviewRepository.save(review);
+
+}
+
+// 📄 Get Reviews
+async getReviews(id: number): Promise<Review[]> {
+
+  return await this.reviewRepository.find({
+    where: { rider: { id } },
+    relations: ['rider'],
+  });
+}
 }

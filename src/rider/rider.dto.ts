@@ -1,30 +1,31 @@
-//accepting delivery
+import { IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
+
 export class CreateRiderDto {
-  orderId: string;
-}
 
-//updating order status
-export class UpdateStatusDto {
-  status: string;
-}
+  @IsString()
+  name: string;
 
-//updating rider location
-export class UpdateLocationDto {
-  latitude: number;
-  longitude: number;
-}
+  @IsEmail()
+  email: string;
 
-//toggling availability
-export class UpdateAvailabilityDto {
-  availability: string;
-}
+  @IsString()
+  phone: string;
 
-//cancelling or rejecting delivery
-export class CancelDeliveryDto {
-  reason: string;
-}
+  @IsString()
+  password: string;
 
-//earnings
-export class EarningsDto {
-  month: string;
+  @IsEnum(['available', 'busy', 'offline'])
+  status: 'available' | 'busy' | 'offline';
+
+  @IsOptional()
+  @IsString()
+  vehicle_type?: string;
+
+  @IsOptional()
+  @IsString()
+  current_location?: string;
+
+  @IsOptional()
+  @IsString()
+  image?: string;
 }
