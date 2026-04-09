@@ -1,5 +1,8 @@
 import { HttpCode, Res } from '@nestjs/common';
 import type { Response } from 'express';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from './jwt-auth.guard';
+
 //new
 import {
   Controller,
@@ -34,6 +37,7 @@ export class SellerController {
   ///////
 
   @Post(':sellerId/products')
+  @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
   createProductForSeller(
     @Param('sellerId', ParseIntPipe) sellerId: number,
@@ -48,6 +52,7 @@ export class SellerController {
   }
 
   @Post(':sellerId/shop')
+  @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
   createSellerShop(
     @Param('sellerId', ParseIntPipe) sellerId: number,
@@ -97,11 +102,13 @@ export class SellerController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   getAllSellers() {
     return this.sellerService.getAllSellers();
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
   updateSeller(
     @Param('id', ParseIntPipe) id: number,
@@ -111,11 +118,13 @@ export class SellerController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   deleteSeller(@Param('id', ParseIntPipe) id: number) {
     return this.sellerService.deleteSeller(id);
   }
 
   @Post('products')
+  @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
   createProduct(@Body() dto: CreateProductDto) {
     return this.sellerService.createProduct(dto);
@@ -155,6 +164,7 @@ export class SellerController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   getSellerById(@Param('id', ParseIntPipe) id: number) {
     return this.sellerService.getSellerById(id);
   }

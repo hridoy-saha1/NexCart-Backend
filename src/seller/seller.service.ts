@@ -1,4 +1,5 @@
 import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
 
 import { UnauthorizedException } from '@nestjs/common';
 import {
@@ -30,6 +31,8 @@ export class SellerService {
     @InjectRepository(SellerShopEntity)
     private readonly sellerShopRepository: Repository<SellerShopEntity>,
     private readonly mailerService: MailerService,
+
+    private readonly jwtService: JwtService,
   ) {}
 
   async sendRegistrationEmail(seller: SellerEntity): Promise<void> {
@@ -68,10 +71,18 @@ export class SellerService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    const payload = {
+      sub: seller.id,
+      email: seller.email,
+    };
+
+    const token = this.jwtService.sign(payload);
+
     const { password, ...safeSeller } = seller;
 
     return {
       message: 'Login successful',
+      access_token: token,
       data: safeSeller,
     };
   }
