@@ -28,6 +28,7 @@ export class AdminController {
       whitelist: true,
       forbidNonWhitelisted: true,
       stopAtFirstError: true,
+      skipMissingProperties: false,
     }),
   )
   create(@Body() dto: CreateAdminDto) {

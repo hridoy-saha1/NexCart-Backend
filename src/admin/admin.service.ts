@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
@@ -46,19 +43,19 @@ export class AdminService {
 
   // PUT (Full update)
   async update(id: number, dto: CreateAdminDto): Promise<AdminEntity> {
-    const admin: AdminEntity = await this.findOne(id);
+    const admin = await this.findOne(id);
 
     admin.name = dto.name;
     admin.email = dto.email;
     admin.password = dto.password;
     admin.isActive = dto.isActive ?? admin.isActive;
 
-    return await this.adminRepo.save(admin);
+    return this.adminRepo.save(admin);
   }
 
   // PATCH (Partial update)
   async partialUpdate(id: number, dto: UpdateAdminDto): Promise<AdminEntity> {
-    const admin: AdminEntity = await this.findOne(id);
+    const admin = await this.findOne(id);
 
     if (dto.name !== undefined) admin.name = dto.name;
     if (dto.email !== undefined) admin.email = dto.email;

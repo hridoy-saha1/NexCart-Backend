@@ -1,4 +1,5 @@
 /* eslint-disable prettier/prettier */
+import { Type } from 'class-transformer';
 import {
   IsString,
   IsEmail,
@@ -29,6 +30,7 @@ export class UpdateAdminDto {
     password?: string;
 
     @IsOptional()
+    @Type(() => Boolean)
     @IsBoolean({ message: 'isActive must be boolean' })
     isActive?: boolean;
 }
