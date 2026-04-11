@@ -25,3 +25,4 @@ export class SellerShopEntity {
   @JoinColumn()
   seller: SellerEntity;
 }
+  

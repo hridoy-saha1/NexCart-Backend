@@ -32,10 +32,9 @@ export class ProductEntity {
   @OneToMany(() => CartItem, (cart) => cart.product)
   cartItems: CartItem[];
 
-
   @OneToMany(() => OrderItem, (oi) => oi.product)
   orderItems: OrderItem[];
-  
+
   @ManyToOne(() => SellerEntity, (seller) => seller.products)
   seller: SellerEntity;
 }
