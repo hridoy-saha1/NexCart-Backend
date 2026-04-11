@@ -6,7 +6,6 @@ import { Order } from 'src/customer/order.entity';
 
 @Entity()
 export class Rider {
-
   @PrimaryGeneratedColumn()
   id: number;
 

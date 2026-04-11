@@ -10,6 +10,7 @@ import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
 import { Order } from 'src/customer/order.entity';
 import { Rider } from 'src/rider/rider.entity';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AdminService {
