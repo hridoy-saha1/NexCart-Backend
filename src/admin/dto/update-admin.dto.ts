@@ -11,7 +11,7 @@ import {
 
 export class UpdateAdminDto {
     @IsOptional()
-    @IsString()
+    @IsString({ message: 'Name must be a string' })
     @Matches(/^[A-Za-z\s]+$/, {
         message: 'Name must not contain numbers',
     })
@@ -22,7 +22,7 @@ export class UpdateAdminDto {
     email?: string;
 
     @IsOptional()
-    @IsString()
+    @IsString({ message: 'Password must be a string' })
     @MinLength(6, { message: 'Password must be at least 6 characters' })
     @Matches(/^(?=.*[@#$&]).+$/, {
         message: 'Password must contain at least one special character (@ # $ &)',

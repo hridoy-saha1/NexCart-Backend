@@ -26,7 +26,6 @@ export class AdminController {
   @UsePipes(
     new ValidationPipe({
       transform: true,
-      whitelist: true,
       forbidNonWhitelisted: true,
       stopAtFirstError: true,
       skipMissingProperties: false,
@@ -59,9 +58,9 @@ export class AdminController {
   @UsePipes(
     new ValidationPipe({
       transform: true,
-      whitelist: true,
       forbidNonWhitelisted: true,
       stopAtFirstError: true,
+      skipMissingProperties: false,
     }),
   )
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: CreateAdminDto) {
@@ -73,7 +72,6 @@ export class AdminController {
   @UsePipes(
     new ValidationPipe({
       transform: true,
-      whitelist: true,
       skipMissingProperties: true,
       forbidNonWhitelisted: true,
       stopAtFirstError: true,
