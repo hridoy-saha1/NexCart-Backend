@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { customerEntity } from './customer.entity';
 import { OrderItem } from './order-item.entity';
+import { Rider } from 'src/rider/rider.entity';
 import { Delivery } from 'src/rider/delivery.entity';
 
 @Entity('orders')
@@ -37,8 +38,12 @@ export class Order {
   @CreateDateColumn()
   createdAt: Date;
 
- 
+  // Orders & Rider
+  @ManyToOne(() => Rider, (rider) => rider.orders, {
+    nullable: true,
+  })
+  rider: Rider;
 
-@OneToMany(() => Delivery, (delivery) => delivery.order)
-deliveries: Delivery[];
+  @OneToMany(() => Delivery, (delivery) => delivery.order)
+  deliveries: Delivery[];
 }

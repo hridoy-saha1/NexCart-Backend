@@ -147,6 +147,7 @@ export class CustomerService {
         'orderItems',
         'orderItems.product',
         'orderItems.seller',
+        'rider',
       ],
     });
   }
