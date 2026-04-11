@@ -29,3 +29,14 @@ export class CreateRiderDto {
   @IsString()
   image?: string;
 }
+
+export class riderLoginDto {
+
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  password: string;
+
+
+}
