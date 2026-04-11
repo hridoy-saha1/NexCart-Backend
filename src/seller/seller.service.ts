@@ -52,9 +52,9 @@ export class SellerService {
     }
   }
 
-  // =========================
+  //
   // Seller CRUD
-  // =========================
+  //
 
   async loginSeller(dto: LoginDto): Promise<object> {
     const seller = await this.sellerRepository.findOne({
@@ -178,9 +178,9 @@ export class SellerService {
     };
   }
 
-  // =========================
+  //
   // Product CRUD
-  // =========================
+  //
 
   async createProduct(dto: CreateProductDto): Promise<object> {
     const product = this.productRepository.create(dto);

@@ -22,7 +22,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { SellerEntity } from './seller.entity';
 import { ProductEntity } from './product.entity';
 import { SellerShopEntity } from './seller-shop.entity';
-// ✅ IMPORT MAILER
+//  IMPORT MAILER
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
@@ -34,13 +34,13 @@ import { JwtStrategy } from './jwt.strategy';
       secret: 'mySecretKey', // 🔁 use env later
       signOptions: { expiresIn: '1h' },
     }),
-    // ✅ LOAD ENV FILE
+    //  LOAD ENV FILE
     ConfigModule.forRoot({
       isGlobal: true,
     }),
     TypeOrmModule.forFeature([SellerEntity, ProductEntity, SellerShopEntity]),
 
-    // ✅ ADD THIS BLOCK
+    //  MAILER
     MailerModule.forRoot({
       transport: {
         host: 'smtp.gmail.com',
