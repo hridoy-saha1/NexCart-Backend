@@ -1,6 +1,8 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
-import { OneToMany } from 'typeorm';
+import { OneToMany, ManyToMany } from 'typeorm';
 import { Review } from './review.entity';
+import { AdminEntity } from 'src/admin/entities/admin.entity';
+import { Order } from 'src/customer/order.entity';
 
 @Entity()
 export class Rider {
@@ -38,4 +40,12 @@ export class Rider {
 
   @OneToMany(() => Review, (review) => review.rider)
   reviews: Review[];
+
+  // Rider & Admin
+  @ManyToMany(() => AdminEntity, (admin) => admin.riders)
+  admins: AdminEntity[];
+
+  // Rider & Orders
+  @OneToMany(() => Order, (order) => order.rider)
+  orders: Order[];
 }

@@ -45,11 +45,15 @@ export class RiderService {
   }
 
   async getAllRiders(): Promise<Rider[]> {
-    return await this.riderRepository.find();
+    return await this.riderRepository.find({
+      relations: ['admins'],
+    });
   }
 
   async getRider(id: number): Promise<Rider> {
-    const rider = await this.riderRepository.findOne({ where: { id } });
+    const rider = await this.riderRepository.findOne({
+      where: { id },
+    });
 
     if (!rider) {
       throw new BadRequestException(`Not Found Your id: ${id}`);

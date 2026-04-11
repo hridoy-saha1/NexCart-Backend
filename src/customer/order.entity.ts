@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { customerEntity } from './customer.entity';
 import { OrderItem } from './order-item.entity';
+import { Rider } from 'src/rider/rider.entity';
 
 @Entity('orders')
 export class Order {
@@ -35,4 +36,10 @@ export class Order {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  // Orders & Rider
+  @ManyToOne(() => Rider, (rider) => rider.orders, {
+    nullable: true,
+  })
+  rider: Rider;
 }

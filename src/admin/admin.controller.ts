@@ -15,6 +15,7 @@ import {
 import { AdminService } from './admin.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
+import { AssignRiderDto } from './dto/assign-rider.dto';
 
 @Controller('admin')
 export class AdminController {
@@ -85,9 +86,54 @@ export class AdminController {
     return this.adminService.partialUpdate(id, dto);
   }
 
-  // 7. DELETE
+  // DELETE
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.adminService.remove(id);
+  }
+
+  // Assign Rider to Admin
+  @Post(':adminId/riders')
+  @UsePipes(
+    new ValidationPipe({
+      transform: true,
+      forbidNonWhitelisted: true,
+    }),
+  )
+  assignRider(
+    @Param('adminId', ParseIntPipe) adminId: number,
+    @Body() dto: AssignRiderDto,
+  ) {
+    return this.adminService.assignRider(adminId, dto.riderId);
+  }
+
+  // Fetch Admin with Riders
+  @Get(':adminId/riders')
+  getRiders(@Param('adminId', ParseIntPipe) adminId: number) {
+    return this.adminService.getAdminWithRiders(adminId);
+  }
+
+  // Remove Rider from Admin
+  @Delete(':adminId/riders/:riderId')
+  removeRider(
+    @Param('adminId', ParseIntPipe) adminId: number,
+    @Param('riderId', ParseIntPipe) riderId: number,
+  ) {
+    return this.adminService.removeRider(adminId, riderId);
+  }
+
+  // Assign Rider to Order
+  @Patch('/orders/:orderId/rider')
+  @UsePipes(
+    new ValidationPipe({
+      transform: true,
+      forbidNonWhitelisted: true,
+    }),
+  )
+  assignOrder(
+    @Param('orderId', ParseIntPipe) orderId: number,
+    @Body() dto: AssignRiderDto,
+  ) {
+    return this.adminService.assignRiderToOrder(orderId, dto.riderId);
   }
 }

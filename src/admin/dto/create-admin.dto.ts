@@ -18,13 +18,13 @@ export class CreateAdminDto {
   @Matches(/^[A-Za-z\s]+$/, {
     message: 'Name must not contain numbers',
   })
-  name!: string;
+  name: string;
 
   // EMAIL (unique identity)
   @IsDefined({ message: 'Email is required' })
   @IsNotEmpty({ message: 'Email is required' })
   @IsEmail({}, { message: 'Invalid email format' })
-  email!: string;
+  email: string;
 
   // PASSWORD (must contain special character)
   @IsDefined({ message: 'Password is required' })
@@ -34,7 +34,7 @@ export class CreateAdminDto {
   @Matches(/^(?=.*[@#$&]).+$/, {
     message: 'Password must contain at least one special character (@ # $ &)',
   })
-  password!: string;
+  password: string;
 
   // OPTIONAL ACTIVE STATUS
   @IsOptional()
