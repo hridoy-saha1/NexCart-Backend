@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { customerEntity } from './customer.entity';
 import { OrderItem } from './order-item.entity';
+import { Delivery } from 'src/rider/delivery.entity';
 
 @Entity('orders')
 export class Order {
@@ -35,4 +36,9 @@ export class Order {
 
   @CreateDateColumn()
   createdAt: Date;
+
+ 
+
+@OneToMany(() => Delivery, (delivery) => delivery.order)
+deliveries: Delivery[];
 }
