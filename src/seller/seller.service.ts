@@ -1,7 +1,7 @@
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 
-import { UnauthorizedException } from '@nestjs/common';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import {
   BadRequestException,
   Injectable,
@@ -87,6 +87,38 @@ export class SellerService {
     };
   }
 
+  // async createSeller(
+  //   dto: SellerRegistrationDto,
+  //   nidImage: Express.Multer.File,
+  // ): Promise<object> {
+  //   if (!nidImage) {
+  //     throw new BadRequestException('NID image is required');
+  //   }
+  //   const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+  //   const seller = this.sellerRepository.create({
+  //     name: dto.name,
+  //     email: dto.email,
+  //     phone: dto.phone,
+  //     nidNumber: dto.nidNumber,
+  //     nidImage: nidImage.filename,
+  //     password: hashedPassword,
+  //   });
+
+  //   const savedSeller = await this.sellerRepository.save(seller);
+
+  //   const { password, ...safeSeller } = savedSeller;
+
+  //   //calling for email sending
+  //   await this.sendRegistrationEmail(savedSeller);
+  //   return {
+  //     message: 'Seller created successfully',
+  //     data: safeSeller,
+  //   };
+  // }
+
+  //
+
   async createSeller(
     dto: SellerRegistrationDto,
     nidImage: Express.Multer.File,
@@ -94,6 +126,27 @@ export class SellerService {
     if (!nidImage) {
       throw new BadRequestException('NID image is required');
     }
+
+    const existingSeller = await this.sellerRepository.findOne({
+      where: [
+        { email: dto.email },
+        { phone: dto.phone },
+        { nidNumber: dto.nidNumber },
+      ],
+    });
+
+    if (existingSeller) {
+      if (existingSeller.email === dto.email) {
+        throw new ConflictException('Email already exists');
+      }
+      if (existingSeller.phone === dto.phone) {
+        throw new ConflictException('Phone already exists');
+      }
+      if (existingSeller.nidNumber === dto.nidNumber) {
+        throw new ConflictException('NID already exists');
+      }
+    }
+
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
     const seller = this.sellerRepository.create({
@@ -109,15 +162,13 @@ export class SellerService {
 
     const { password, ...safeSeller } = savedSeller;
 
-    //calling for email sending
     await this.sendRegistrationEmail(savedSeller);
+
     return {
       message: 'Seller created successfully',
       data: safeSeller,
     };
   }
-
-  //
 
   async getAllSellers(): Promise<object> {
     const sellers = await this.sellerRepository.find();
@@ -156,9 +207,12 @@ export class SellerService {
 
     const updatedSeller = await this.sellerRepository.save(seller);
 
+    const { email, ...rest } = updatedSeller;
+
     return {
       message: `Seller with ID ${id} updated successfully`,
-      data: updatedSeller,
+      email: email,
+      id: rest.id,
     };
   }
 
@@ -229,6 +283,7 @@ export class SellerService {
 
     const updatedProduct = await this.productRepository.save(product);
 
+    // const { id, email, ...rest } = updatedProduct;
     return {
       message: `Product with ID ${id} updated successfully`,
       data: updatedProduct,
