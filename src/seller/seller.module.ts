@@ -32,7 +32,7 @@ import { JwtStrategy } from './jwt.strategy';
   imports: [
     JwtModule.register({
       secret: 'mySecretKey', // 🔁 use env later
-      signOptions: { expiresIn: '1h' },
+      signOptions: { expiresIn: '1d' },
     }),
     //  LOAD ENV FILE
     ConfigModule.forRoot({

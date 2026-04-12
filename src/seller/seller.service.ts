@@ -68,7 +68,7 @@ export class SellerService {
     const isPasswordValid = await bcrypt.compare(dto.password, seller.password);
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('Invalid email or  password');
     }
 
     const payload = {
