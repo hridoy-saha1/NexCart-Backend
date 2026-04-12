@@ -16,38 +16,63 @@ import { AdminService } from './admin.service';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
 import { AssignRiderDto } from './dto/assign-rider.dto';
+import { LoginAdminDto } from './dto/login-admin.dto';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
 
 @Controller('admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
+
+  // LOGIN
+  @Post('login')
+  @UsePipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }), // property role should not exist (400 - Bad Request)
+  )
+  login(@Body() dto: LoginAdminDto) {
+    return this.adminService.login(dto);
+  }
 
   // CREATE
   @Post()
   @UsePipes(
     new ValidationPipe({
       transform: true,
+      whitelist: true,
       forbidNonWhitelisted: true,
       stopAtFirstError: true,
-      skipMissingProperties: false,
     }),
   )
   create(@Body() dto: CreateAdminDto) {
     return this.adminService.create(dto);
   }
 
+  @Post('verify-otp')
+  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  verifyOtp(@Body() dto: VerifyOtpDto) {
+    return this.adminService.verifyOtp(dto);
+  }
+
   // GET ALL
   @Get()
+  @UseGuards(JwtAuthGuard)
   findAll() {
     return this.adminService.findAll();
   }
 
   // SEARCH (Query)
   @Get('search')
+  @UseGuards(JwtAuthGuard)
   search(@Query('name') name: string) {
     return this.adminService.search(name ?? '');
   }
 
   // GET ONE (with pipe)
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.adminService.findOne(id);
@@ -55,6 +80,7 @@ export class AdminController {
 
   // PUT (Full update)
   @Put(':id')
+  @UseGuards(JwtAuthGuard)
   @UsePipes(
     new ValidationPipe({
       transform: true,
@@ -69,6 +95,7 @@ export class AdminController {
 
   // PATCH (Partial update)
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   @UsePipes(
     new ValidationPipe({
       transform: true,
@@ -86,12 +113,14 @@ export class AdminController {
 
   // DELETE
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.adminService.remove(id);
   }
 
   // Assign Rider to Admin
   @Post(':adminId/riders')
+  @UseGuards(JwtAuthGuard)
   @UsePipes(
     new ValidationPipe({
       transform: true,
@@ -107,12 +136,14 @@ export class AdminController {
 
   // Fetch Admin with Riders
   @Get(':adminId/riders')
+  @UseGuards(JwtAuthGuard)
   getRiders(@Param('adminId', ParseIntPipe) adminId: number) {
     return this.adminService.getAdminWithRiders(adminId);
   }
 
   // Remove Rider from Admin
   @Delete(':adminId/riders/:riderId')
+  @UseGuards(JwtAuthGuard)
   removeRider(
     @Param('adminId', ParseIntPipe) adminId: number,
     @Param('riderId', ParseIntPipe) riderId: number,
@@ -121,7 +152,8 @@ export class AdminController {
   }
 
   // Assign Rider to Order
-  @Patch('/orders/:orderId/rider')
+  @Patch('orders/:orderId/rider')
+  @UseGuards(JwtAuthGuard)
   @UsePipes(
     new ValidationPipe({
       transform: true,
