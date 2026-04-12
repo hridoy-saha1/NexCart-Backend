@@ -6,13 +6,13 @@ import { JwtStrategy } from './jwt.strategy';
 
 @Module({
   imports: [
-    PassportModule,
+    // PassportModule,
     JwtModule.register({
-      secret: 'YOUR_SECRET_KEY', // change to env variable for production
+      secret: 'hridoy', // change to env variable for production
       signOptions: { expiresIn: '1h' },
     }),
   ],
   providers: [CustomerService, JwtStrategy],
-  exports: [JwtModule, PassportModule],
+  // exports: [JwtModule, PassportModule],
 })
 export class AuthModule {}

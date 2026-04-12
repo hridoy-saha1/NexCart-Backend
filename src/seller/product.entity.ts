@@ -32,10 +32,12 @@ export class ProductEntity {
   @OneToMany(() => CartItem, (cart) => cart.product)
   cartItems: CartItem[];
 
-
   @OneToMany(() => OrderItem, (oi) => oi.product)
   orderItems: OrderItem[];
-  
-  @ManyToOne(() => SellerEntity, (seller) => seller.products)
+
+  @ManyToOne(() => SellerEntity, (seller) => seller.products,{
+    cascade: true,
+    onDelete: 'CASCADE'
+  })
   seller: SellerEntity;
 }
