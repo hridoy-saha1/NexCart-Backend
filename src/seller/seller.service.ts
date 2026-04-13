@@ -10,14 +10,18 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { SellerEntity } from './seller.entity';
-import { ProductEntity } from './product.entity';
+import { SellerEntity } from './entities/seller.entity';
+import { ProductEntity } from './entities/product.entity';
 
-import { SellerRegistrationDto, UpdateSellerDto, LoginDto } from './seller.dto';
-import { CreateProductDto, UpdateProductDto } from './product.dto';
-import { SellerShopEntity } from './seller-shop.entity';
-import { CreateSellerShopDto } from './seller-shop.dto';
-import { MailerService } from '@nestjs-modules/mailer';
+import {
+  SellerRegistrationDto,
+  UpdateSellerDto,
+  LoginDto,
+} from './dtos/seller.dto';
+import { CreateProductDto, UpdateProductDto } from './dtos/product.dto';
+import { SellerShopEntity } from './entities/seller-shop.entity';
+import { CreateSellerShopDto } from './dtos/seller-shop.dto';
+import { MailService } from './modules/mail.service';
 
 @Injectable()
 export class SellerService {
@@ -30,27 +34,27 @@ export class SellerService {
 
     @InjectRepository(SellerShopEntity)
     private readonly sellerShopRepository: Repository<SellerShopEntity>,
-    private readonly mailerService: MailerService,
+    private readonly mailService: MailService,
 
     private readonly jwtService: JwtService,
   ) {}
 
-  async sendRegistrationEmail(seller: SellerEntity): Promise<void> {
-    try {
-      await this.mailerService.sendMail({
-        to: seller.email,
-        subject: 'Seller Registration Successful',
-        html: `
-        <h2>Welcome ${seller.name}</h2>
-        <p>Your seller account has been created successfully.</p>
-        <p><b>Email:</b> ${seller.email}</p>
-      `,
-      });
-    } catch (error) {
-      console.error('Email sending failed:', error);
-      // optional: don't break registration if email fails
-    }
-  }
+  // async sendRegistrationEmail(seller: SellerEntity): Promise<void> {
+  //   try {
+  //     await this.mailService.sendMail({
+  //       to: seller.email,
+  //       subject: 'Seller Registration Successful',
+  //       html: `
+  //       <h2>Welcome ${seller.name}</h2>
+  //       <p>Your seller account has been created successfully.</p>
+  //       <p><b>Email:</b> ${seller.email}</p>
+  //     `,
+  //     });
+  //   } catch (error) {
+  //     console.error('Email sending failed:', error);
+  //     // optional: don't break registration if email fails
+  //   }
+  // }
 
   //
   // Seller CRUD
@@ -162,7 +166,7 @@ export class SellerService {
 
     const { password, ...safeSeller } = savedSeller;
 
-    await this.sendRegistrationEmail(savedSeller);
+    await this.mailService.sendSellerRegistrationEmail(savedSeller);
 
     return {
       message: 'Seller created successfully',

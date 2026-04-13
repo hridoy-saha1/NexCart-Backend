@@ -35,9 +35,9 @@ export class ProductEntity {
   @OneToMany(() => OrderItem, (oi) => oi.product)
   orderItems: OrderItem[];
 
-  @ManyToOne(() => SellerEntity, (seller) => seller.products,{
+  @ManyToOne(() => SellerEntity, (seller) => seller.products, {
     cascade: true,
-    onDelete: 'CASCADE'
+    onDelete: 'CASCADE',
   })
   seller: SellerEntity;
 }

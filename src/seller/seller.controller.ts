@@ -25,10 +25,17 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 
 import { SellerService } from './seller.service';
-import { SellerRegistrationDto, UpdateSellerDto, LoginDto } from './seller.dto';
-import { CreateProductDto, UpdateProductDto } from './product.dto';
+import {
+  SellerRegistrationDto,
+  UpdateSellerDto,
+  LoginDto,
+} from './dtos/seller.dto';
+import { CreateProductDto, UpdateProductDto } from './dtos/product.dto';
 
-import { CreateSellerShopDto, UpdateSellerShopDto } from './seller-shop.dto';
+import {
+  CreateSellerShopDto,
+  UpdateSellerShopDto,
+} from './dtos/seller-shop.dto';
 
 @Controller('seller')
 export class SellerController {

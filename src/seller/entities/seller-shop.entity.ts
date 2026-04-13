@@ -21,9 +21,9 @@ export class SellerShopEntity {
   @Column({ type: 'varchar', length: 50, unique: true })
   tradeLicense: string;
 
-  @OneToOne(() => SellerEntity, (seller) => seller.shop,{
+  @OneToOne(() => SellerEntity, (seller) => seller.shop, {
     onDelete: 'CASCADE',
-    cascade: true
+    cascade: true,
   })
   @JoinColumn()
   seller: SellerEntity;
