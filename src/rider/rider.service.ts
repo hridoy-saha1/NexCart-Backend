@@ -170,7 +170,7 @@ export class RiderService {
     return await this.riderRepository.save(rider);
   }
 
-  async deleteRider(id: number): Promise<object> {
+  async deleteRider(id: number): Promise<any> {
     const rider = await this.riderRepository.findOne({ where: { id } });
 
     if (!rider) {
