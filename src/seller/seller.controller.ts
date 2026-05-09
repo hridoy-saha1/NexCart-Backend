@@ -1,7 +1,3 @@
-import { HttpCode } from '@nestjs/common';
-import { UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from './jwt-auth.guard';
-
 import {
   Controller,
   Get,
@@ -16,77 +12,28 @@ import {
   ValidationPipe,
   ParseIntPipe,
   BadRequestException,
+  UseGuards,
+  HttpCode,
 } from '@nestjs/common';
 
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 
 import { SellerService } from './seller.service';
+import { JwtAuthGuard } from './jwt-auth.guard';
+
 import {
   SellerRegistrationDto,
   UpdateSellerDto,
   LoginDto,
 } from './dtos/seller.dto';
-import { CreateProductDto, UpdateProductDto } from './dtos/product.dto';
 
+import { CreateProductDto, UpdateProductDto } from './dtos/product.dto';
 import { CreateSellerShopDto } from './dtos/seller-shop.dto';
 
 @Controller('seller')
 export class SellerController {
   constructor(private readonly sellerService: SellerService) {}
-
-  @Post(':sellerId/products')
-  @UseGuards(JwtAuthGuard)
-  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-  @UseInterceptors(
-    FileInterceptor('productImage', {
-      fileFilter: (req, file, cb) => {
-        if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/i)) {
-          cb(null, true);
-        } else {
-          cb(
-            new BadRequestException(
-              'Only image files (jpg, jpeg, png, webp) are allowed',
-            ),
-            false,
-          );
-        }
-      },
-      limits: { fileSize: 2 * 1024 * 1024 },
-      storage: diskStorage({
-        destination: './uploads/products',
-        filename: (req, file, cb) => {
-          cb(null, Date.now() + '-' + file.originalname);
-        },
-      }),
-    }),
-  )
-  createProductForSeller(
-    @Param('sellerId', ParseIntPipe) sellerId: number,
-    @Body() dto: CreateProductDto,
-    @UploadedFile() productImage: Express.Multer.File,
-  ) {
-    return this.sellerService.createProductForSeller(
-      sellerId,
-      dto,
-      productImage,
-    );
-  }
-
-  @Get(':sellerId/products')
-  getProductsBySeller(@Param('sellerId', ParseIntPipe) sellerId: number) {
-    return this.sellerService.getProductsBySeller(sellerId);
-  }
-
-  @Post(':sellerId/shop')
-  @UseGuards(JwtAuthGuard)
-  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-  createSellerShop(
-    @Param('sellerId', ParseIntPipe) sellerId: number,
-    @Body() dto: CreateSellerShopDto,
-  ) {
-    return this.sellerService.createSellerShop(sellerId, dto);
-  }
 
   @Post()
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
@@ -133,23 +80,17 @@ export class SellerController {
     return this.sellerService.getAllSellers();
   }
 
-  @Patch(':id')
-  @UseGuards(JwtAuthGuard)
-  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-  updateSeller(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateSellerDto,
-  ) {
-    return this.sellerService.updateSeller(id, dto);
+  @Get('products')
+  getAllProducts() {
+    return this.sellerService.getAllProducts();
   }
 
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  deleteSeller(@Param('id', ParseIntPipe) id: number) {
-    return this.sellerService.deleteSeller(id);
+  @Get('products/:id')
+  getProductById(@Param('id', ParseIntPipe) id: number) {
+    return this.sellerService.getProductById(id);
   }
 
-  @Post('products')
+  @Post(':sellerId/products')
   @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
   @UseInterceptors(
@@ -175,24 +116,25 @@ export class SellerController {
       }),
     }),
   )
-  createProduct(
+  createProductForSeller(
+    @Param('sellerId', ParseIntPipe) sellerId: number,
     @Body() dto: CreateProductDto,
     @UploadedFile() productImage: Express.Multer.File,
   ) {
-    return this.sellerService.createProduct(dto, productImage);
+    return this.sellerService.createProductForSeller(
+      sellerId,
+      dto,
+      productImage,
+    );
   }
 
-  @Get('products')
-  getAllProducts() {
-    return this.sellerService.getAllProducts();
-  }
-
-  @Get('products/:id')
-  getProductById(@Param('id', ParseIntPipe) id: number) {
-    return this.sellerService.getProductById(id);
+  @Get(':sellerId/products')
+  getProductsBySeller(@Param('sellerId', ParseIntPipe) sellerId: number) {
+    return this.sellerService.getProductsBySeller(sellerId);
   }
 
   @Patch('products/:id')
+  @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
   @UseInterceptors(
     FileInterceptor('productImage', {
@@ -226,8 +168,59 @@ export class SellerController {
   }
 
   @Delete('products/:id')
+  @UseGuards(JwtAuthGuard)
   deleteProduct(@Param('id', ParseIntPipe) id: number) {
     return this.sellerService.deleteProduct(id);
+  }
+
+  @Post(':sellerId/shop')
+  @UseGuards(JwtAuthGuard)
+  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+  createSellerShop(
+    @Param('sellerId', ParseIntPipe) sellerId: number,
+    @Body() dto: CreateSellerShopDto,
+  ) {
+    return this.sellerService.createSellerShop(sellerId, dto);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard)
+  @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+  @UseInterceptors(
+    FileInterceptor('nidImage', {
+      fileFilter: (req, file, cb) => {
+        if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/i)) {
+          cb(null, true);
+        } else {
+          cb(
+            new BadRequestException(
+              'Only image files (jpg, jpeg, png, webp) are allowed',
+            ),
+            false,
+          );
+        }
+      },
+      limits: { fileSize: 2 * 1024 * 1024 },
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          cb(null, Date.now() + '-' + file.originalname);
+        },
+      }),
+    }),
+  )
+  updateSeller(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateSellerDto,
+    @UploadedFile() nidImage?: Express.Multer.File,
+  ) {
+    return this.sellerService.updateSeller(id, dto, nidImage);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  deleteSeller(@Param('id', ParseIntPipe) id: number) {
+    return this.sellerService.deleteSeller(id);
   }
 
   @Get(':id')
