@@ -28,7 +28,6 @@ export class ProductEntity {
 
   @Column({ type: 'int' })
   quantity: number;
-
   @OneToMany(() => CartItem, (cart) => cart.product)
   cartItems: CartItem[];
 
