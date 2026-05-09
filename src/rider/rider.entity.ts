@@ -26,7 +26,7 @@ export class Rider {
     enum: ['available', 'busy', 'offline'],
     default: 'offline',
   })
-  status: string;
+  status: 'available' | 'busy' | 'offline';
 
   @Column({ nullable: true })
   vehicle_type: string;

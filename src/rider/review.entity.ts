@@ -19,20 +19,20 @@ export class Review {
   })
   rating: number;
 
-  // 💬 Comment
+  // Comment
   @Column({
     type: 'text',
     nullable: true,
   })
   comment: string;
 
-  // 🔗 Many Reviews → One Rider
+  // Many Reviews → One Rider
   @ManyToOne(() => Rider, (rider) => rider.reviews, {
     onDelete: 'CASCADE',
   })
   rider: Rider;
 
-  // 🕒 Created Time
+  // Created Time
   @CreateDateColumn()
   created_at: Date;
   
