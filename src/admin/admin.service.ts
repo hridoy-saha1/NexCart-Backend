@@ -121,7 +121,7 @@ export class AdminService {
       throw new BadRequestException('Invalid OTP');
     }
 
-    if (admin.otpExpiry < new Date()) {
+    if (admin.otpExpiry && admin.otpExpiry < new Date()) {
       throw new BadRequestException('OTP expired');
     }
 
@@ -129,7 +129,52 @@ export class AdminService {
     admin.otp = null;
     admin.otpExpiry = null;
 
-    return this.adminRepo.save(admin);
+    await this.adminRepo.save(admin);
+
+    return {
+      message: 'OTP verified successfully',
+    };
+  }
+
+  async resendOtp() {
+    // Find the latest unverified admin
+    const admin = await this.adminRepo.findOne({
+      where: { isVerified: false },
+      order: { createdAt: 'DESC' }, // get the most recently registered
+    });
+
+    if (!admin) throw new NotFoundException('No pending verification found');
+
+    const otp = this.generateOtp();
+    admin.otp = otp;
+    admin.otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
+    await this.adminRepo.save(admin);
+
+    await this.mailerService.sendMail({
+      to: admin.email,
+      subject: 'Verify Your Account - NexCart',
+      html: `
+    <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">
+      
+      <h3>OTP Verification</h3>
+
+      <p>Hello ${admin.name},</p>
+
+      <p>Your OTP code is:</p>
+
+      <p style="font-size: 20px; font-weight: bold;">
+        ${otp}
+      </p>
+
+      <p>This OTP will expire in 5 minutes.</p>
+
+      <p>If you didn’t request this, please ignore this email.</p>
+
+    </div>
+  `,
+    });
+
+    return { message: 'OTP resent successfully' };
   }
 
   // login

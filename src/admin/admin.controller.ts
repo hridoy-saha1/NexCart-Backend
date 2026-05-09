@@ -57,6 +57,11 @@ export class AdminController {
     return this.adminService.verifyOtp(dto);
   }
 
+  @Post('resend-otp')
+  resendOtp() {
+    return this.adminService.resendOtp(); // no body needed
+  }
+
   // GET ALL
   @Get()
   @UseGuards(JwtAuthGuard)

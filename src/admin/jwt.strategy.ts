@@ -12,9 +12,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     super({
-      // jsonWebTokenOptions: {
-      //   ignoreNotBefore: true, // Ignore "nbf" claim to prevent "Token not active" errors
-      // },
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: key,
     });
