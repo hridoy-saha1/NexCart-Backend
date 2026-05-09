@@ -1,23 +1,30 @@
-import * as bcrypt from 'bcrypt';
-import { JwtService } from '@nestjs/jwt';
-
-import { UnauthorizedException } from '@nestjs/common';
 import {
-  BadRequestException,
   Injectable,
+  BadRequestException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
 
-import { SellerEntity } from './seller.entity';
-import { ProductEntity } from './product.entity';
+import { SellerEntity } from './entities/seller.entity';
+import { ProductEntity } from './entities/product.entity';
+import { SellerShopEntity } from './entities/seller-shop.entity';
 
-import { SellerRegistrationDto, UpdateSellerDto, LoginDto } from './seller.dto';
-import { CreateProductDto, UpdateProductDto } from './product.dto';
-import { SellerShopEntity } from './seller-shop.entity';
-import { CreateSellerShopDto } from './seller-shop.dto';
-import { MailerService } from '@nestjs-modules/mailer';
+import {
+  SellerRegistrationDto,
+  UpdateSellerDto,
+  LoginDto,
+} from './dtos/seller.dto';
+
+import { CreateProductDto, UpdateProductDto } from './dtos/product.dto';
+
+import {
+  CreateSellerShopDto,
+  UpdateSellerShopDto,
+} from './dtos/seller-shop.dto';
 
 @Injectable()
 export class SellerService {
@@ -30,62 +37,13 @@ export class SellerService {
 
     @InjectRepository(SellerShopEntity)
     private readonly sellerShopRepository: Repository<SellerShopEntity>,
-    private readonly mailerService: MailerService,
 
     private readonly jwtService: JwtService,
   ) {}
 
-  async sendRegistrationEmail(seller: SellerEntity): Promise<void> {
-    try {
-      await this.mailerService.sendMail({
-        to: seller.email,
-        subject: 'Seller Registration Successful',
-        html: `
-        <h2>Welcome ${seller.name}</h2>
-        <p>Your seller account has been created successfully.</p>
-        <p><b>Email:</b> ${seller.email}</p>
-      `,
-      });
-    } catch (error) {
-      console.error('Email sending failed:', error);
-      // optional: don't break registration if email fails
-    }
-  }
-
   // =========================
-  // Seller CRUD
+  // Seller Auth
   // =========================
-
-  async loginSeller(dto: LoginDto): Promise<object> {
-    const seller = await this.sellerRepository.findOne({
-      where: { email: dto.email },
-    });
-
-    if (!seller || !seller.password) {
-      throw new UnauthorizedException('Invalid email or password');
-    }
-
-    const isPasswordValid = await bcrypt.compare(dto.password, seller.password);
-
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid email or password');
-    }
-
-    const payload = {
-      sub: seller.id,
-      email: seller.email,
-    };
-
-    const token = this.jwtService.sign(payload);
-
-    const { password, ...safeSeller } = seller;
-
-    return {
-      message: 'Login successful',
-      access_token: token,
-      data: safeSeller,
-    };
-  }
 
   async createSeller(
     dto: SellerRegistrationDto,
@@ -94,6 +52,31 @@ export class SellerService {
     if (!nidImage) {
       throw new BadRequestException('NID image is required');
     }
+
+    const existingEmail = await this.sellerRepository.findOne({
+      where: { email: dto.email },
+    });
+
+    if (existingEmail) {
+      throw new BadRequestException('Email already exists');
+    }
+
+    const existingPhone = await this.sellerRepository.findOne({
+      where: { phone: dto.phone },
+    });
+
+    if (existingPhone) {
+      throw new BadRequestException('Phone number already exists');
+    }
+
+    const existingNid = await this.sellerRepository.findOne({
+      where: { nidNumber: dto.nidNumber },
+    });
+
+    if (existingNid) {
+      throw new BadRequestException('NID number already exists');
+    }
+
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
     const seller = this.sellerRepository.create({
@@ -107,39 +90,90 @@ export class SellerService {
 
     const savedSeller = await this.sellerRepository.save(seller);
 
-    const { password, ...safeSeller } = savedSeller;
+    const { password, ...sellerWithoutPassword } = savedSeller;
 
-    //calling for email sending
-    await this.sendRegistrationEmail(savedSeller);
     return {
-      message: 'Seller created successfully',
-      data: safeSeller,
+      message: 'Seller registered successfully',
+      data: sellerWithoutPassword,
     };
   }
 
-  //
+  async loginSeller(dto: LoginDto): Promise<object> {
+    const seller = await this.sellerRepository.findOne({
+      where: { email: dto.email },
+    });
+
+    if (!seller) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    const isPasswordMatched = await bcrypt.compare(
+      dto.password,
+      seller.password,
+    );
+
+    if (!isPasswordMatched) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    const payload = {
+      sub: seller.id,
+      email: seller.email,
+      role: 'seller',
+    };
+
+    const access_token = await this.jwtService.signAsync(payload);
+
+    const { password, ...sellerWithoutPassword } = seller;
+
+    return {
+      message: 'Seller login successful',
+      access_token,
+      seller: sellerWithoutPassword,
+    };
+  }
+
+  // =========================
+  // Seller CRUD
+  // =========================
 
   async getAllSellers(): Promise<object> {
-    const sellers = await this.sellerRepository.find();
+    const sellers = await this.sellerRepository.find({
+      relations: {
+        products: true,
+        shop: true,
+      },
+    });
+
+    const sellersWithoutPassword = sellers.map((seller) => {
+      const { password, ...safeSeller } = seller;
+      return safeSeller;
+    });
 
     return {
       message: 'All sellers retrieved successfully',
-      data: sellers,
+      data: sellersWithoutPassword,
     };
   }
 
   async getSellerById(id: number): Promise<object> {
     const seller = await this.sellerRepository.findOne({
       where: { id },
+      relations: {
+        products: true,
+        shop: true,
+      },
     });
 
     if (!seller) {
       throw new NotFoundException(`Seller with ID ${id} not found`);
     }
 
+    const { password, ...sellerWithoutPassword } = seller;
+
     return {
       message: 'Seller retrieved successfully',
-      data: seller,
+      data: sellerWithoutPassword,
     };
   }
 
@@ -152,13 +186,45 @@ export class SellerService {
       throw new NotFoundException(`Seller with ID ${id} not found`);
     }
 
+    if (dto.email && dto.email !== seller.email) {
+      const existingEmail = await this.sellerRepository.findOne({
+        where: { email: dto.email },
+      });
+
+      if (existingEmail) {
+        throw new BadRequestException('Email already exists');
+      }
+    }
+
+    if (dto.phone && dto.phone !== seller.phone) {
+      const existingPhone = await this.sellerRepository.findOne({
+        where: { phone: dto.phone },
+      });
+
+      if (existingPhone) {
+        throw new BadRequestException('Phone number already exists');
+      }
+    }
+
+    if (dto.nidNumber && dto.nidNumber !== seller.nidNumber) {
+      const existingNid = await this.sellerRepository.findOne({
+        where: { nidNumber: dto.nidNumber },
+      });
+
+      if (existingNid) {
+        throw new BadRequestException('NID number already exists');
+      }
+    }
+
     Object.assign(seller, dto);
 
     const updatedSeller = await this.sellerRepository.save(seller);
 
+    const { password, ...sellerWithoutPassword } = updatedSeller;
+
     return {
       message: `Seller with ID ${id} updated successfully`,
-      data: updatedSeller,
+      data: sellerWithoutPassword,
     };
   }
 
@@ -182,8 +248,19 @@ export class SellerService {
   // Product CRUD
   // =========================
 
-  async createProduct(dto: CreateProductDto): Promise<object> {
-    const product = this.productRepository.create(dto);
+  async createProduct(
+    dto: CreateProductDto,
+    productImage?: Express.Multer.File,
+  ): Promise<object> {
+    const product = this.productRepository.create({
+      productName: dto.productName,
+      category: dto.category,
+      description: dto.description,
+      price: dto.price,
+      quantity: dto.quantity,
+      productImage: productImage ? productImage.filename : null,
+    });
+
     const savedProduct = await this.productRepository.save(product);
 
     return {
@@ -192,8 +269,43 @@ export class SellerService {
     };
   }
 
+  async createProductForSeller(
+    sellerId: number,
+    dto: CreateProductDto,
+    productImage?: Express.Multer.File,
+  ): Promise<object> {
+    const seller = await this.sellerRepository.findOne({
+      where: { id: sellerId },
+    });
+
+    if (!seller) {
+      throw new NotFoundException(`Seller with ID ${sellerId} not found`);
+    }
+
+    const product = this.productRepository.create({
+      productName: dto.productName,
+      category: dto.category,
+      description: dto.description,
+      price: dto.price,
+      quantity: dto.quantity,
+      productImage: productImage ? productImage.filename : null,
+      seller,
+    });
+
+    const savedProduct = await this.productRepository.save(product);
+
+    return {
+      message: 'Product created successfully for seller',
+      data: savedProduct,
+    };
+  }
+
   async getAllProducts(): Promise<object> {
-    const products = await this.productRepository.find();
+    const products = await this.productRepository.find({
+      relations: {
+        seller: true,
+      },
+    });
 
     return {
       message: 'All products retrieved successfully',
@@ -201,9 +313,38 @@ export class SellerService {
     };
   }
 
+  async getProductsBySeller(sellerId: number): Promise<object> {
+    const seller = await this.sellerRepository.findOne({
+      where: { id: sellerId },
+    });
+
+    if (!seller) {
+      throw new NotFoundException(`Seller with ID ${sellerId} not found`);
+    }
+
+    const products = await this.productRepository.find({
+      where: {
+        seller: {
+          id: sellerId,
+        },
+      },
+      relations: {
+        seller: true,
+      },
+    });
+
+    return {
+      message: `Products for seller ID ${sellerId} retrieved successfully`,
+      data: products,
+    };
+  }
+
   async getProductById(id: number): Promise<object> {
     const product = await this.productRepository.findOne({
       where: { id },
+      relations: {
+        seller: true,
+      },
     });
 
     if (!product) {
@@ -216,7 +357,11 @@ export class SellerService {
     };
   }
 
-  async updateProduct(id: number, dto: UpdateProductDto): Promise<object> {
+  async updateProduct(
+    id: number,
+    dto: UpdateProductDto,
+    productImage?: Express.Multer.File,
+  ): Promise<object> {
     const product = await this.productRepository.findOne({
       where: { id },
     });
@@ -226,6 +371,10 @@ export class SellerService {
     }
 
     Object.assign(product, dto);
+
+    if (productImage) {
+      product.productImage = productImage.filename;
+    }
 
     const updatedProduct = await this.productRepository.save(product);
 
@@ -251,47 +400,9 @@ export class SellerService {
     };
   }
 
-  //for relationship routes
-  async createProductForSeller(
-    sellerId: number,
-    dto: CreateProductDto,
-  ): Promise<object> {
-    const seller = await this.sellerRepository.findOne({
-      where: { id: sellerId },
-    });
-
-    if (!seller) {
-      throw new NotFoundException(`Seller with ID ${sellerId} not found`);
-    }
-
-    const product = this.productRepository.create({
-      ...dto,
-      seller,
-    });
-
-    const savedProduct = await this.productRepository.save(product);
-
-    return {
-      message: 'Product created for seller successfully',
-      data: savedProduct,
-    };
-  }
-
-  async getProductsBySeller(sellerId: number): Promise<object> {
-    const seller = await this.sellerRepository.findOne({
-      where: { id: sellerId },
-      relations: ['products'],
-    });
-
-    if (!seller) {
-      throw new NotFoundException(`Seller with ID ${sellerId} not found`);
-    }
-
-    return {
-      message: 'Seller products retrieved successfully',
-      data: seller.products,
-    };
-  }
+  // =========================
+  // Seller Shop CRUD
+  // =========================
 
   async createSellerShop(
     sellerId: number,
@@ -299,18 +410,16 @@ export class SellerService {
   ): Promise<object> {
     const seller = await this.sellerRepository.findOne({
       where: { id: sellerId },
+      relations: {
+        shop: true,
+      },
     });
 
     if (!seller) {
       throw new NotFoundException(`Seller with ID ${sellerId} not found`);
     }
 
-    const existingShop = await this.sellerShopRepository.findOne({
-      where: { seller: { id: sellerId } },
-      relations: ['seller'],
-    });
-
-    if (existingShop) {
+    if (seller.shop) {
       throw new BadRequestException('This seller already has a shop');
     }
 
@@ -324,6 +433,31 @@ export class SellerService {
     return {
       message: 'Seller shop created successfully',
       data: savedShop,
+    };
+  }
+
+  async updateSellerShop(
+    shopId: number,
+    dto: UpdateSellerShopDto,
+  ): Promise<object> {
+    const shop = await this.sellerShopRepository.findOne({
+      where: { id: shopId },
+      relations: {
+        seller: true,
+      },
+    });
+
+    if (!shop) {
+      throw new NotFoundException(`Shop with ID ${shopId} not found`);
+    }
+
+    Object.assign(shop, dto);
+
+    const updatedShop = await this.sellerShopRepository.save(shop);
+
+    return {
+      message: `Shop with ID ${shopId} updated successfully`,
+      data: updatedShop,
     };
   }
 }

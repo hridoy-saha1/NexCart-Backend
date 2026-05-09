@@ -13,8 +13,8 @@ export class SellerEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  name: string | null;
+  @Column({ type: 'varchar', length: 100 })
+  name: string;
 
   @Column({ type: 'varchar', length: 100, unique: true })
   email: string;

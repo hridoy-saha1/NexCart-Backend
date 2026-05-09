@@ -13,17 +13,24 @@ import {
   Put,
   Patch,
   UseGuards,
+<<<<<<< HEAD
   Request,
+=======
+>>>>>>> 6b0737dbb8d82d089b95a8597cbefa651787be4e
 } from '@nestjs/common';
 import { CustomerService } from './customer.service';
 import { CreateCustomerDto, UpdateProfileDto } from './customer.dto';
 
 import { customerEntity } from './customer.entity';
-import { ProductEntity } from 'src/seller/product.entity';
+import { ProductEntity } from 'src/seller/entities/product.entity';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+<<<<<<< HEAD
 import { JwtAuthGuard } from './jwt-auth.guard';
+=======
+import { JwtAuthGuard } from 'src/seller/jwt-auth.guard';
+>>>>>>> 6b0737dbb8d82d089b95a8597cbefa651787be4e
 
 @Controller('customer')
 export class CustomerController {
@@ -107,6 +114,7 @@ export class CustomerController {
 
   // Get all orders
   @Get('orders-details')
+  @UseGuards(JwtAuthGuard)
   getOrders() {
     return this.customerService.getOrderDetails();
   }

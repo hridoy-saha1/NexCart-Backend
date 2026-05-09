@@ -4,6 +4,7 @@ import {
   IsNumber,
   IsOptional,
   Min,
+  IsInt,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -26,7 +27,7 @@ export class CreateProductDto {
   price: number;
 
   @Type(() => Number)
-  @IsNumber({}, { message: 'Quantity must be a number' })
+  @IsInt( { message: 'Quantity must be an integer number' })
   @Min(0, { message: 'Quantity cannot be negative' })
   quantity: number;
 }

@@ -7,13 +7,14 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ProductEntity } from 'src/seller/product.entity';
+// import { ProductEntity } from 'src/seller/product.entity';
 import { CartItem } from './cart-item.entity';
 import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from './mail.service';
+import { ProductEntity } from 'src/seller/entities/product.entity';
 
 @Injectable()
 export class CustomerService {
@@ -205,6 +206,7 @@ export class CustomerService {
         'orderItems',
         'orderItems.product',
         'orderItems.seller',
+        'rider',
       ],
     });
   }
