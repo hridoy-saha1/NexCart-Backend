@@ -3,10 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { customerEntity } from './customer.entity';
 import { Like, Repository } from 'typeorm';
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { ProductEntity } from 'src/seller/product.entity';
+import { ProductEntity } from 'src/seller/entities/product.entity';
 import { CartItem } from './cart-item.entity';
 import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
+import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class CustomerService {
@@ -15,7 +17,7 @@ export class CustomerService {
     private userRepository: Repository<customerEntity>,
     @InjectRepository(ProductEntity)
     private productRepository: Repository<ProductEntity>,
-     @InjectRepository(CartItem)
+    @InjectRepository(CartItem)
     private cartRepo: Repository<CartItem>,
 
     @InjectRepository(Order)
@@ -23,21 +25,38 @@ export class CustomerService {
 
     @InjectRepository(OrderItem)
     private orderItemRepo: Repository<OrderItem>,
+    private readonly jwtService: JwtService,
   ) {}
   async createUser(dto: CreateCustomerDto): Promise<customerEntity> {
+    // 1. Hash the password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(dto.password, saltRounds);
+
+    // 2. Replace plain password with hashed password
+    dto.password = hashedPassword;
+
+    // 3. Save user
     return await this.userRepository.save(dto);
   }
   async login(body): Promise<any> {
     const user = await this.userRepository.findOne({
-      where: {
-        email: body.email,
-      },
+      where: { email: body.email },
     });
-    if (!user || user.password !== body.password) {
+    if (!user || !(await bcrypt.compare(body.password, user.password))) {
       throw new BadRequestException('Invalid email or password');
     }
 
-    return user;
+    const payload = { id: user.id, name: user.name, email: user.email };
+    const token = this.jwtService.sign(payload);
+
+    return {
+      message: 'Login successful',
+      user: {
+        id: user.id,
+        name: user.name,
+      },
+      token,
+    };
   }
   async getProfile(id: number): Promise<customerEntity> {
     const user = await this.userRepository.findOne({ where: { id } });
@@ -84,7 +103,7 @@ export class CustomerService {
     });
   }
   //Relationship start
- async addToCart(customerId: number, productId: number) {
+  async addToCart(customerId: number, productId: number) {
     const customer = await this.userRepository.findOne({
       where: { id: customerId },
     });

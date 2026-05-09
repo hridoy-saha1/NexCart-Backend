@@ -17,13 +17,13 @@ export class CreateSellerShopDto {
 export class UpdateSellerShopDto {
   @IsOptional()
   @IsString()
-  shopName?: string;
+  shopName!: string;
 
   @IsOptional()
   @IsString()
-  shopAddress?: string;
+  shopAddress!: string;
 
   @IsOptional()
   @IsString()
-  tradeLicense?: string;
+  tradeLicense!: string;
 }

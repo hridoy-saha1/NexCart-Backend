@@ -12,15 +12,17 @@ import {
   BadRequestException,
   Put,
   Patch,
+  UseGuards,
 } from '@nestjs/common';
 import { CustomerService } from './customer.service';
 import { CreateCustomerDto, UpdateProfileDto } from './customer.dto';
 
 import { customerEntity } from './customer.entity';
-import { ProductEntity } from 'src/seller/product.entity';
+import { ProductEntity } from 'src/seller/entities/product.entity';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { JwtAuthGuard } from 'src/seller/jwt-auth.guard';
 
 @Controller('customer')
 export class CustomerController {
@@ -39,6 +41,7 @@ export class CustomerController {
     return this.customerService.getProfile(id);
   }
   @Get('products')
+  @UseGuards(JwtAuthGuard)
   getAllProducts(): Promise<ProductEntity[]> {
     return this.customerService.getAllProducts();
   }
@@ -101,6 +104,7 @@ export class CustomerController {
 
   // Get all orders
   @Get('orders-details')
+  @UseGuards(JwtAuthGuard)
   getOrders() {
     return this.customerService.getOrderDetails();
   }
