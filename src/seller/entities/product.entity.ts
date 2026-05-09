@@ -8,6 +8,7 @@ import {
   ManyToOne,
 } from 'typeorm';
 import { SellerEntity } from './seller.entity';
+import { SellerShopEntity } from './seller-shop.entity';
 
 export enum ProductCategory {
   ELECTRONICS = 'Electronics',
@@ -16,6 +17,7 @@ export enum ProductCategory {
   BEAUTY = 'Beauty',
   SPORTS = 'Sports',
 }
+
 @Entity('product')
 export class ProductEntity {
   @PrimaryGeneratedColumn()
@@ -24,11 +26,11 @@ export class ProductEntity {
   @Column({ type: 'varchar', length: 100 })
   productName: string;
 
-@Column({
-  type: 'enum',
-  enum: ProductCategory,
-})
-category: ProductCategory;
+  @Column({
+    type: 'enum',
+    enum: ProductCategory,
+  })
+  category: ProductCategory;
 
   @Column({ type: 'text', nullable: true })
   description: string;
@@ -49,8 +51,12 @@ category: ProductCategory;
   orderItems: OrderItem[];
 
   @ManyToOne(() => SellerEntity, (seller) => seller.products, {
-    cascade: true,
     onDelete: 'CASCADE',
   })
   seller: SellerEntity;
+
+  @ManyToOne(() => SellerShopEntity, (shop) => shop.products, {
+    onDelete: 'CASCADE',
+  })
+  sellerShop: SellerShopEntity;
 }
