@@ -4,8 +4,10 @@ import {
   PrimaryGeneratedColumn,
   OneToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { SellerEntity } from './seller.entity';
+import { ProductEntity } from './product.entity';
 
 @Entity('seller_shop')
 export class SellerShopEntity {
@@ -23,8 +25,10 @@ export class SellerShopEntity {
 
   @OneToOne(() => SellerEntity, (seller) => seller.shop, {
     onDelete: 'CASCADE',
-    cascade: true,
   })
   @JoinColumn()
   seller: SellerEntity;
+
+  @OneToMany(() => ProductEntity, (product) => product.sellerShop)
+  products: ProductEntity[];
 }
