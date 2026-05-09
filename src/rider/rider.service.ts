@@ -1,6 +1,5 @@
 import * as bcrypt from 'bcrypt';
 
-
 import { Injectable, NotFoundException } from '@nestjs/common';
 import {
   BadRequestException,
@@ -9,7 +8,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Rider } from './rider.entity';
-
 
 import { Review } from './review.entity';
 import { Delivery } from './delivery.entity';
@@ -24,7 +22,6 @@ import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class RiderService {
-
   constructor(
     @InjectRepository(Rider)
     private riderRepository: Repository<Rider>,
@@ -108,7 +105,6 @@ async createRider(dto: any): Promise<Rider> {
 }
 
   async login(dto: riderLoginDto): Promise<object> {
-
     const rider = await this.riderRepository.findOne({
       where: { email: dto.email },
     });
@@ -123,26 +119,22 @@ async createRider(dto: any): Promise<Rider> {
       throw new BadRequestException('Invalid email or password');
     }
 
-
     const payload = { email: rider.email, sub: rider.id };
     const token = this.jwtService.sign(payload);
-
 
     const { password, ...result } = rider;
 
     return {
-message: 'Login successful',
-rider: result,
-access_token :token
-    }
-
+      message: 'Login successful',
+      rider: result,
+      access_token: token,
+    };
   }
 
   async changeStatus(
     id: number,
     status: 'available' | 'busy' | 'offline',
   ): Promise<Rider> {
-
     const rider = await this.riderRepository.findOne({ where: { id } });
 
     if (!rider) {
@@ -262,7 +254,7 @@ async updateOrderStatus(
     });
 
     if (!rider) {
-      throw new NotFoundException('Rider not found');
+      throw new BadRequestException(`Rider not found with id: ${id}`);
     }
 
     //Prevent duplicate delivery record
@@ -270,18 +262,7 @@ async updateOrderStatus(
       where: { order: { id: orderId } },
     });
 
-    if (existing) {
-      throw new BadRequestException(
-        'Delivery already recorded',
-      );
-    }
-
-    const delivery = this.deliveryRepository.create({
-      order: order,
-      rider: rider,
-    });
-
-    await this.deliveryRepository.save(delivery);
+    return await this.reviewRepository.save(review);
   }
 
   return await this.orderRepository.save(order);
