@@ -18,24 +18,20 @@ import { access } from 'fs';
 
 import { MailerService } from '@nestjs-modules/mailer';
 
-
-
 @Injectable()
 export class RiderService {
   constructor(
     @InjectRepository(Rider)
     private riderRepository: Repository<Rider>,
-     @InjectRepository(Review)
-  private reviewRepository: Repository<Review>,
-       @InjectRepository(Delivery)
-  private deliveryRepository: Repository<Delivery>,
-         @InjectRepository(Order)
-  private orderRepository: Repository<Order>,
-  private readonly mailerService: MailerService,
-  private readonly jwtService: JwtService,
-
-
-  ) {  }
+    @InjectRepository(Review)
+    private reviewRepository: Repository<Review>,
+    @InjectRepository(Delivery)
+    private deliveryRepository: Repository<Delivery>,
+    @InjectRepository(Order)
+    private orderRepository: Repository<Order>,
+    private readonly mailerService: MailerService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   async sendRegistrationEmail(rider: Rider): Promise<void> {
     try {
@@ -54,55 +50,49 @@ export class RiderService {
     }
   }
 
-async createRider(dto: any): Promise<Rider> {
-  try {
-    // Check existing rider
-    const existingRider = await this.riderRepository.findOne({
-      where: [
-        { email: dto.email },
-        { phone: dto.phone },
-        { name: dto.name },
-      ],
-    });
+  async createRider(dto: any): Promise<Rider> {
+    try {
+      // Check existing rider
+      const existingRider = await this.riderRepository.findOne({
+        where: [{ email: dto.email }, { phone: dto.phone }, { name: dto.name }],
+      });
 
-    if (existingRider) {
-      if (existingRider.email === dto.email) {
-        throw new BadRequestException('Email already exists');
+      if (existingRider) {
+        if (existingRider.email === dto.email) {
+          throw new BadRequestException('Email already exists');
+        }
+
+        if (existingRider.phone === dto.phone) {
+          throw new BadRequestException('Phone number already exists');
+        }
+
+        if (existingRider.name === dto.name) {
+          throw new BadRequestException('Name already exists');
+        }
       }
 
-      if (existingRider.phone === dto.phone) {
-        throw new BadRequestException('Phone number already exists');
+      // Hash password
+      const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+      // Save rider
+      const rider = await this.riderRepository.save({
+        ...dto,
+        password: hashedPassword,
+      });
+
+      // await this.sendRegistrationEmail(rider);
+
+      return rider;
+    } catch (error) {
+      // Throw known errors
+      if (error instanceof BadRequestException) {
+        throw error;
       }
 
-      if (existingRider.name === dto.name) {
-        throw new BadRequestException('Name already exists');
-      }
+      // Unknown error
+      throw new InternalServerErrorException('Failed to create rider');
     }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
-
-    // Save rider
-    const rider = await this.riderRepository.save({
-      ...dto,
-      password: hashedPassword,
-    });
-
-    // await this.sendRegistrationEmail(rider);
-
-    return rider;
-  } catch (error) {
-    // Throw known errors
-    if (error instanceof BadRequestException) {
-      throw error;
-    }
-
-    // Unknown error
-    throw new InternalServerErrorException(
-      'Failed to create rider',
-    );
   }
-}
 
   async login(dto: riderLoginDto): Promise<object> {
     const rider = await this.riderRepository.findOne({
@@ -189,85 +179,85 @@ async createRider(dto: any): Promise<Rider> {
 
     // return await this.riderRepository.remove(rider);
     return {
-
-      msg:"Rider deleted successfully",
+      msg: 'Rider deleted successfully',
       obj: await this.riderRepository.remove(rider),
-
-    }
+    };
   }
 
-  // 
-async addReview(id: number, dto: any): Promise<Review[]> {
-
-  const rider = await this.riderRepository.findOne({ where: { id } });
-
-  if (!rider) {
-    throw new BadRequestException(`Rider not found with id: ${id}`);
-  }
-
-  const review = this.reviewRepository.create({
-    ...dto,
-    rider,
-  });
-
-  return await this.reviewRepository.save(review);
-
-}
-
-// Get Reviews
-async getReviews(id: number): Promise<Review[]> {
-
-  return await this.reviewRepository.find({
-    where: { rider: { id } },
-    relations: ['rider'],
-  });
-}
-
-async updateOrderStatus(
-  orderId: number,
-  status: 'processing' | 'delivered',
-  riderId: number,
-): Promise<Order> {
-  const order = await this.orderRepository.findOne({
-    where: { id: orderId },
-  });
-
-  if (!order) {
-    throw new NotFoundException('Order not found');
-  }
-
-  if (!['processing', 'delivered'].includes(status)) {
-    throw new BadRequestException('Invalid status');
-  }
-
-  //Prevent re-delivery
-  if (order.status === 'delivered') {
-    throw new BadRequestException('Order already delivered');
-  }
-
-  order.status = status;
-
-  //When delivered → insert into delivery table
-  if (status === 'delivered') {
-    const rider = await this.riderRepository.findOne({
-      where: { id: riderId },
-    });
+  //
+  async addReview(id: number, dto: any): Promise<Review[]> {
+    const rider = await this.riderRepository.findOne({ where: { id } });
 
     if (!rider) {
       throw new BadRequestException(`Rider not found with id: ${id}`);
     }
 
-    //Prevent duplicate delivery record
-    const existing = await this.deliveryRepository.findOne({
-      where: { order: { id: orderId } },
+    const review = this.reviewRepository.create({
+      ...dto,
+      rider,
     });
 
     return await this.reviewRepository.save(review);
   }
 
-  return await this.orderRepository.save(order);
-
+  // Get Reviews
+  async getReviews(id: number): Promise<Review[]> {
+    return await this.reviewRepository.find({
+      where: { rider: { id } },
+      relations: ['rider'],
+    });
   }
 
+  async updateOrderStatus(
+    orderId: number,
+    status: 'processing' | 'delivered',
+    riderId: number,
+  ): Promise<Order> {
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId },
+    });
 
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    if (!['processing', 'delivered'].includes(status)) {
+      throw new BadRequestException('Invalid status');
+    }
+
+    //Prevent re-delivery
+    if (order.status === 'delivered') {
+      throw new BadRequestException('Order already delivered');
+    }
+
+    order.status = status;
+
+    //When delivered → insert into delivery table
+    if (status === 'delivered') {
+      const rider = await this.riderRepository.findOne({
+        where: { id: riderId },
+      });
+
+      if (!rider) {
+        throw new BadRequestException(`Rider not found with id: ${riderId}`);
+      }
+
+      // Prevent duplicate delivery record
+      const existing = await this.deliveryRepository.findOne({
+        where: { order: { id: orderId } },
+      });
+
+      if (!existing) {
+        const delivery = this.deliveryRepository.create({
+          order,
+          rider,
+        });
+        await this.deliveryRepository.save(delivery);
+      }
+
+      return await this.orderRepository.save(order);
+    }
+
+    return await this.orderRepository.save(order);
   }
+}
