@@ -18,7 +18,7 @@ import { CustomerService } from './customer.service';
 import { CreateCustomerDto, UpdateProfileDto } from './customer.dto';
 
 import { customerEntity } from './customer.entity';
-import { ProductEntity } from 'src/seller/product.entity';
+import { ProductEntity } from 'src/seller/entities/product.entity';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';

@@ -1,14 +1,11 @@
-import { HttpCode, Res } from '@nestjs/common';
-import type { Response } from 'express';
+import { HttpCode } from '@nestjs/common';
 import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
-//new
 import {
   Controller,
   Get,
   Post,
-  Put,
   Patch,
   Delete,
   Param,
@@ -25,25 +22,55 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 
 import { SellerService } from './seller.service';
-import { SellerRegistrationDto, UpdateSellerDto, LoginDto } from './seller.dto';
-import { CreateProductDto, UpdateProductDto } from './product.dto';
+import {
+  SellerRegistrationDto,
+  UpdateSellerDto,
+  LoginDto,
+} from './dtos/seller.dto';
+import { CreateProductDto, UpdateProductDto } from './dtos/product.dto';
 
-import { CreateSellerShopDto, UpdateSellerShopDto } from './seller-shop.dto';
+import { CreateSellerShopDto } from './dtos/seller-shop.dto';
 
 @Controller('seller')
 export class SellerController {
   constructor(private readonly sellerService: SellerService) {}
 
-  ///////
-
   @Post(':sellerId/products')
   @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+  @UseInterceptors(
+    FileInterceptor('productImage', {
+      fileFilter: (req, file, cb) => {
+        if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/i)) {
+          cb(null, true);
+        } else {
+          cb(
+            new BadRequestException(
+              'Only image files (jpg, jpeg, png, webp) are allowed',
+            ),
+            false,
+          );
+        }
+      },
+      limits: { fileSize: 2 * 1024 * 1024 },
+      storage: diskStorage({
+        destination: './uploads/products',
+        filename: (req, file, cb) => {
+          cb(null, Date.now() + '-' + file.originalname);
+        },
+      }),
+    }),
+  )
   createProductForSeller(
     @Param('sellerId', ParseIntPipe) sellerId: number,
     @Body() dto: CreateProductDto,
+    @UploadedFile() productImage: Express.Multer.File,
   ) {
-    return this.sellerService.createProductForSeller(sellerId, dto);
+    return this.sellerService.createProductForSeller(
+      sellerId,
+      dto,
+      productImage,
+    );
   }
 
   @Get(':sellerId/products')
@@ -60,7 +87,6 @@ export class SellerController {
   ) {
     return this.sellerService.createSellerShop(sellerId, dto);
   }
-  //////
 
   @Post()
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
@@ -126,8 +152,34 @@ export class SellerController {
   @Post('products')
   @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-  createProduct(@Body() dto: CreateProductDto) {
-    return this.sellerService.createProduct(dto);
+  @UseInterceptors(
+    FileInterceptor('productImage', {
+      fileFilter: (req, file, cb) => {
+        if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/i)) {
+          cb(null, true);
+        } else {
+          cb(
+            new BadRequestException(
+              'Only image files (jpg, jpeg, png, webp) are allowed',
+            ),
+            false,
+          );
+        }
+      },
+      limits: { fileSize: 2 * 1024 * 1024 },
+      storage: diskStorage({
+        destination: './uploads/products',
+        filename: (req, file, cb) => {
+          cb(null, Date.now() + '-' + file.originalname);
+        },
+      }),
+    }),
+  )
+  createProduct(
+    @Body() dto: CreateProductDto,
+    @UploadedFile() productImage: Express.Multer.File,
+  ) {
+    return this.sellerService.createProduct(dto, productImage);
   }
 
   @Get('products')
@@ -140,22 +192,37 @@ export class SellerController {
     return this.sellerService.getProductById(id);
   }
 
-  // @Put('products/:id')
-  // @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
-  // replaceProduct(
-  //   @Param('id', ParseIntPipe) id: number,
-  //   @Body() dto: UpdateProductDto,
-  // ) {
-  //   return this.sellerService.replaceProduct(id, dto);
-  // }
-
   @Patch('products/:id')
   @UsePipes(new ValidationPipe({ whitelist: true, transform: true }))
+  @UseInterceptors(
+    FileInterceptor('productImage', {
+      fileFilter: (req, file, cb) => {
+        if (file.originalname.match(/^.*\.(jpg|webp|png|jpeg)$/i)) {
+          cb(null, true);
+        } else {
+          cb(
+            new BadRequestException(
+              'Only image files (jpg, jpeg, png, webp) are allowed',
+            ),
+            false,
+          );
+        }
+      },
+      limits: { fileSize: 2 * 1024 * 1024 },
+      storage: diskStorage({
+        destination: './uploads/products',
+        filename: (req, file, cb) => {
+          cb(null, Date.now() + '-' + file.originalname);
+        },
+      }),
+    }),
+  )
   updateProduct(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateProductDto,
+    @UploadedFile() productImage?: Express.Multer.File,
   ) {
-    return this.sellerService.updateProduct(id, dto);
+    return this.sellerService.updateProduct(id, dto, productImage);
   }
 
   @Delete('products/:id')
@@ -168,6 +235,4 @@ export class SellerController {
   getSellerById(@Param('id', ParseIntPipe) id: number) {
     return this.sellerService.getSellerById(id);
   }
-
-  //
 }

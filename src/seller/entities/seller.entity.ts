@@ -36,4 +36,4 @@ export class SellerEntity {
 
   @OneToOne(() => SellerShopEntity, (shop) => shop.seller)
   shop: SellerShopEntity;
-  }
+}
