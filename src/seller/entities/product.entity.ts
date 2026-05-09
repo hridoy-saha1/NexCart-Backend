@@ -9,6 +9,13 @@ import {
 } from 'typeorm';
 import { SellerEntity } from './seller.entity';
 
+export enum ProductCategory {
+  ELECTRONICS = 'Electronics',
+  FASHION = 'Fashion',
+  HOME_LIVING = 'Home & Living',
+  BEAUTY = 'Beauty',
+  SPORTS = 'Sports',
+}
 @Entity('product')
 export class ProductEntity {
   @PrimaryGeneratedColumn()
@@ -17,8 +24,11 @@ export class ProductEntity {
   @Column({ type: 'varchar', length: 100 })
   productName: string;
 
-  @Column({ type: 'varchar', length: 100 })
-  category: string;
+@Column({
+  type: 'enum',
+  enum: ProductCategory,
+})
+category: ProductCategory;
 
   @Column({ type: 'text', nullable: true })
   description: string;
