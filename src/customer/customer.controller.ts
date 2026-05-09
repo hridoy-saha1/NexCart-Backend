@@ -12,6 +12,8 @@ import {
   BadRequestException,
   Put,
   Patch,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { CustomerService } from './customer.service';
 import { CreateCustomerDto, UpdateProfileDto } from './customer.dto';
@@ -21,10 +23,12 @@ import { ProductEntity } from 'src/seller/product.entity';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('customer')
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
+
   @Post('register')
   @UsePipes(new ValidationPipe())
   createUser(@Body() dto: CreateCustomerDto): Promise<customerEntity> {
@@ -34,11 +38,15 @@ export class CustomerController {
   login(@Body() body): Promise<any> {
     return this.customerService.login(body);
   }
-  @Get('profile/:id')
-  getProfile(@Param('id', ParseIntPipe) id: number): Promise<customerEntity> {
-    return this.customerService.getProfile(id);
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  getProfile(@Request() req) {
+    console.log('🔥 CONTROLLER HIT');
+    console.log('🔥 REQ USER:', req.user);
+    return this.customerService.getProfile(req.user.id);
   }
   @Get('products')
+  @UseGuards(JwtAuthGuard)
   getAllProducts(): Promise<ProductEntity[]> {
     return this.customerService.getAllProducts();
   }
@@ -71,9 +79,7 @@ export class CustomerController {
     return this.customerService.updateProfile(id, dto, file);
   }
   @Get('products/:id')
-  getProductById(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<ProductEntity> {
+  getProductById(@Param('id', ParseIntPipe) id: number): Promise<object> {
     return this.customerService.getProductById(id);
   }
 

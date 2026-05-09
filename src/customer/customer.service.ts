@@ -2,13 +2,18 @@ import { CreateCustomerDto, UpdateProfileDto } from './customer.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { customerEntity } from './customer.entity';
 import { Like, Repository } from 'typeorm';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ProductEntity } from 'src/seller/product.entity';
 import { CartItem } from './cart-item.entity';
 import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { MailService } from './mail.service';
 
 @Injectable()
 export class CustomerService {
@@ -26,28 +31,50 @@ export class CustomerService {
     @InjectRepository(OrderItem)
     private orderItemRepo: Repository<OrderItem>,
     private readonly jwtService: JwtService,
+    private mailService: MailService,
   ) {}
   async createUser(dto: CreateCustomerDto): Promise<customerEntity> {
-    // 1. Hash the password
-    const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(dto.password, saltRounds);
+    try {
+      // Hash password
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(dto.password, saltRounds);
 
-    // 2. Replace plain password with hashed password
-    dto.password = hashedPassword;
+      dto.password = hashedPassword;
 
-    // 3. Save user
-    return await this.userRepository.save(dto);
+      // Save user
+      const user = await this.userRepository.save(dto);
+
+      // Send mail
+      await this.mailService.sendWelcomeEmail(user.email, user.name);
+
+      return user;
+    } catch (error) {
+      // Duplicate Email Error
+      if (error.code === '23505') {
+        throw new BadRequestException('Email already exists');
+      }
+
+      throw error;
+    }
   }
+  ///////////////
   async login(body): Promise<any> {
     const user = await this.userRepository.findOne({
       where: { email: body.email },
     });
+
     if (!user || !(await bcrypt.compare(body.password, user.password))) {
       throw new BadRequestException('Invalid email or password');
     }
 
-    const payload = { id: user.id, name: user.name, email: user.email };
-    const token = this.jwtService.sign(payload);
+    const payload = {
+      sub: user.id,
+      email: user.email,
+    };
+
+    const token = this.jwtService.sign(payload, {
+      secret: 'mySecretKey',
+    });
 
     return {
       message: 'Login successful',
@@ -58,14 +85,21 @@ export class CustomerService {
       token,
     };
   }
-  async getProfile(id: number): Promise<customerEntity> {
-    const user = await this.userRepository.findOne({ where: { id } });
+  async getProfile(id: number): Promise<object> {
+    console.log('🔥 SERVICE HIT, ID =', id);
+
+    const user = await this.userRepository.findOne({
+      where: { id },
+    });
 
     if (!user) {
-      throw new BadRequestException(`User not found with id ${id}`);
+      throw new NotFoundException('User not found');
     }
 
-    return user;
+    return {
+      id: user.id,
+      name: user.name,
+    };
   }
   async updateProfile(
     id: number,
@@ -80,8 +114,13 @@ export class CustomerService {
 
     Object.assign(user, dto);
 
-    return await this.userRepository.save(user);
+    await this.userRepository.save(user);
+    return {
+      id: user.id,
+      email: user.email,
+    };
   }
+  ///////////////////
   async getAllProducts(): Promise<ProductEntity[]> {
     return await this.productRepository.find();
   }
