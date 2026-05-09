@@ -28,6 +28,10 @@ export class ProductEntity {
 
   @Column({ type: 'int' })
   quantity: number;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  productImage: string | null;
+
   @OneToMany(() => CartItem, (cart) => cart.product)
   cartItems: CartItem[];
 

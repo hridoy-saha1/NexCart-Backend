@@ -41,6 +41,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -48,7 +50,6 @@ import { AdminModule } from './admin/admin.module';
 import { CustomerModule } from './customer/customer.module';
 import { SellerModule } from './seller/seller.module';
 import { RiderModule } from './rider/rider.module';
-// ❌ Remove MailModule from here — it belongs inside SellerModule only
 
 @Module({
   imports: [
@@ -57,12 +58,17 @@ import { RiderModule } from './rider/rider.module';
       envFilePath: '.env',
     }),
 
-    // ✅ Use forRootAsync so ConfigService is available
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'uploads'),
+      serveRoot: '/uploads',
+    }),
+
+    // Use forRootAsync so ConfigService is available
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
-        url: config.get<string>('DATABASE_URL'), // ✅ safely loaded at runtime
+        url: config.get<string>('DATABASE_URL'), //  safely loaded at runtime
         autoLoadEntities: true,
         synchronize: true,
         ssl: {
