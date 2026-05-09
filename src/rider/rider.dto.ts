@@ -14,8 +14,9 @@ export class CreateRiderDto {
   @IsString()
   password: string;
 
-  @IsEnum(['available', 'busy', 'offline'])
-  status: 'available' | 'busy' | 'offline';
+ @IsOptional()
+@IsEnum(['available', 'busy', 'offline'])
+status?: 'available' | 'busy' | 'offline';
 
   @IsOptional()
   @IsString()

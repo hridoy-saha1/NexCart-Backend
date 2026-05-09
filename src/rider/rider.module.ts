@@ -8,14 +8,32 @@ import { Order } from 'src/customer/order.entity';
 import { Delivery } from './delivery.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
-
+import { MailerModule } from '@nestjs-modules/mailer';
+import { ConfigModule } from '@nestjs/config';
 @Module({
   imports: [
+
+      ConfigModule.forRoot({
+        isGlobal: true,
+      }), 
+
+
     JwtModule.register({
       secret: 'mySecretKey',
       signOptions: { expiresIn: '1h' },
     }),
-    TypeOrmModule.forFeature([Rider,Review,Order,Delivery])],
+    TypeOrmModule.forFeature([Rider,Review,Order,Delivery]),
+     MailerModule.forRoot({
+      transport: {
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: true,
+        auth: {
+          user:process.env.Email ,
+          pass: process.env.EmailPassword,
+        },
+      },
+    }),],
   controllers: [RiderController,],
   providers: [RiderService, JwtStrategy],
 })
