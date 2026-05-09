@@ -242,12 +242,20 @@ export class RiderService {
         throw new BadRequestException(`Rider not found with id: ${riderId}`);
       }
 
-      //Prevent duplicate delivery record
+      // Prevent duplicate delivery record
       const existing = await this.deliveryRepository.findOne({
         where: { order: { id: orderId } },
       });
 
-      return await this.reviewRepository.save(order);
+      if (!existing) {
+        const delivery = this.deliveryRepository.create({
+          order,
+          rider,
+        });
+        await this.deliveryRepository.save(delivery);
+      }
+
+      return await this.orderRepository.save(order);
     }
 
     return await this.orderRepository.save(order);
