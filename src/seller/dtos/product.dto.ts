@@ -5,17 +5,21 @@ import {
   IsOptional,
   Min,
   IsInt,
+  IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ProductCategory } from '../entities/product.entity';
 
 export class CreateProductDto {
   @IsString()
   @IsNotEmpty()
   productName: string;
 
-  @IsString()
-  @IsNotEmpty()
-  category: string;
+  @IsEnum(ProductCategory, {
+    message:
+      'Category must be one of: Electronics, Fashion, Home & Living, Beauty, Sports',
+  })
+  category: ProductCategory;
 
   @IsOptional()
   @IsString()
@@ -27,7 +31,7 @@ export class CreateProductDto {
   price: number;
 
   @Type(() => Number)
-  @IsInt( { message: 'Quantity must be an integer number' })
+  @IsInt({ message: 'Quantity must be an integer number' })
   @Min(0, { message: 'Quantity cannot be negative' })
   quantity: number;
 }
@@ -38,8 +42,11 @@ export class UpdateProductDto {
   productName?: string;
 
   @IsOptional()
-  @IsString()
-  category?: string;
+  @IsEnum(ProductCategory, {
+    message:
+      'Category must be one of: Electronics, Fashion, Home & Living, Beauty, Sports',
+  })
+  category?: ProductCategory;
 
   @IsOptional()
   @IsString()
@@ -53,7 +60,7 @@ export class UpdateProductDto {
 
   @IsOptional()
   @Type(() => Number)
-  @IsNumber({}, { message: 'Quantity must be a number' })
+  @IsInt({ message: 'Quantity must be an integer number' })
   @Min(0, { message: 'Quantity cannot be negative' })
   quantity?: number;
 }
