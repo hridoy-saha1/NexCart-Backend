@@ -24,15 +24,9 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 
 import { RiderService } from './rider.service';
 
-import {
-  CreateRiderDto,
-  riderLoginDto,
-} from './rider.dto';
+import { CreateRiderDto, riderLoginDto } from './rider.dto';
 
-import {
-  Rider,
-  RiderStatus,
-} from './rider.entity';
+import { Rider, RiderStatus } from './rider.entity';
 
 import { CreateReviewDto } from './review.dto';
 import { Review } from './review.entity';
@@ -54,13 +48,9 @@ export class RiderController {
         destination: './uploads/riders',
 
         filename: (req, file, cb) => {
-          const unique =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
 
-          cb(
-            null,
-            `${unique}${extname(file.originalname)}`,
-          );
+          cb(null, `${unique}${extname(file.originalname)}`);
         },
       }),
     }),
@@ -133,13 +123,9 @@ export class RiderController {
       storage: diskStorage({
         destination: './uploads/riders',
         filename: (req, file, cb) => {
-          const unique =
-            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
 
-          cb(
-            null,
-            `${unique}${extname(file.originalname)}`,
-          );
+          cb(null, `${unique}${extname(file.originalname)}`);
         },
       }),
     }),
@@ -195,10 +181,6 @@ export class RiderController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateOrderStatusDto,
   ) {
-    return this.riderService.updateOrderStatus(
-      id,
-      dto.status,
-      dto.riderId,
-    );
+    return this.riderService.updateOrderStatus(id, dto.status, dto.riderId);
   }
 }
