@@ -15,6 +15,7 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from './mail.service';
 import { ProductEntity } from 'src/seller/entities/product.entity';
+import { profile } from 'console';
 
 @Injectable()
 export class CustomerService {
@@ -100,6 +101,8 @@ export class CustomerService {
     return {
       id: user.id,
       name: user.name,
+      email: user.email,
+      profilePic: user.profilePic,
     };
   }
   async updateProfile(
@@ -118,6 +121,8 @@ export class CustomerService {
     await this.userRepository.save(user);
     return {
       id: user.id,
+      name: user.name,
+      profilePic: user.profilePic,
       email: user.email,
     };
   }
@@ -161,6 +166,20 @@ export class CustomerService {
       item = this.cartRepo.create({ customer, product });
     }
     return await this.cartRepo.save(item);
+  }
+
+  async getCart(customerId: number) {
+    const customer = await this.userRepository.findOne({
+      where: { id: customerId },
+
+      relations: ['cartItems', 'cartItems.product'],
+    });
+
+    if (!customer) {
+      throw new BadRequestException('Customer not found');
+    }
+
+    return customer.cartItems;
   }
 
   // Place order
