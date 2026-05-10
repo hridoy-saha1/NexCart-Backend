@@ -28,6 +28,8 @@ import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
 import { MailModule } from './modules/mail.module';
+import { OrderItem } from 'src/customer/order-item.entity';
+import { Order } from 'src/customer/order.entity';
 
 @Module({
   imports: [
@@ -53,7 +55,13 @@ import { MailModule } from './modules/mail.module';
       secret: 'mySecretKey', //
       signOptions: { expiresIn: '1h' },
     }),
-    TypeOrmModule.forFeature([SellerEntity, ProductEntity, SellerShopEntity]),
+    TypeOrmModule.forFeature([
+      SellerEntity,
+      ProductEntity,
+      SellerShopEntity,
+     Order,
+      OrderItem,
+    ]),
   ],
   controllers: [SellerController],
   providers: [SellerService, JwtStrategy],
