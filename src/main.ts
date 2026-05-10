@@ -1,11 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-// import { DataSource } from 'typeorm';
+import { DataSource } from 'typeorm';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // const dataSource = app.get(DataSource);
+  const dataSource = app.get(DataSource);
 
   // // wait for connection if not ready
   // if (!dataSource.isInitialized) {
@@ -20,12 +20,11 @@ async function bootstrap() {
   //   ADD COLUMN IF NOT EXISTS "isVerified" boolean NOT NULL DEFAULT false;
   // `);
 
-  // // auto-verify known admin emails on every startup
-  // await dataSource.query(`
-  //   UPDATE "admin"
-  //   SET "isVerified" = true
-  //   WHERE email IN ('nurhasin910@gmail.com', 'neymar910jr@gmail.com');
-  // `);
+  // Auto-verify ALL admins on every startup
+  await dataSource.query(`
+    UPDATE "admin"
+    SET "isVerified" = true;
+  `);
 
   // console.log('Admin columns ensured and verified');
 
