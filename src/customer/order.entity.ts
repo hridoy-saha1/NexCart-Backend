@@ -24,7 +24,15 @@ export class Order {
 
   @Column({
     type: 'enum',
-    enum: ['pending', 'processing', 'delivered', 'cancelled'],
+    enum: [
+      'pending',
+      'accepted',
+      'partial',
+      'rider_assigned',
+      'out_for_delivery',
+      'delivered',
+      'cancelled',
+    ],
     default: 'pending',
   })
   status: string;
