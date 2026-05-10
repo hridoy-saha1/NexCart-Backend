@@ -12,7 +12,11 @@ import { JwtService } from '@nestjs/jwt';
 import { SellerEntity } from './entities/seller.entity';
 import { ProductEntity } from './entities/product.entity';
 import { SellerShopEntity } from './entities/seller-shop.entity';
-
+import {
+  OrderItem,
+  SellerOrderItemStatus,
+} from 'src/customer/order-item.entity';
+import { Order } from 'src/customer/order.entity';
 import {
   SellerRegistrationDto,
   UpdateSellerDto,
@@ -37,6 +41,12 @@ export class SellerService {
 
     @InjectRepository(SellerShopEntity)
     private readonly sellerShopRepository: Repository<SellerShopEntity>,
+
+    @InjectRepository(OrderItem)
+    private readonly orderItemRepository: Repository<OrderItem>,
+
+    @InjectRepository(Order)
+    private readonly orderRepository: Repository<Order>,
 
     private readonly jwtService: JwtService,
   ) {}
@@ -77,7 +87,20 @@ export class SellerService {
       throw new BadRequestException('NID number already exists');
     }
 
+    // Optional but recommended
+    const existingTradeLicense = await this.sellerShopRepository.findOne({
+      where: { tradeLicense: dto.tradeLicense },
+    });
+
+    if (existingTradeLicense) {
+      throw new BadRequestException('Trade license already exists');
+    }
+
     const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    // =========================
+    // CREATE SELLER
+    // =========================
 
     const seller = this.sellerRepository.create({
       name: dto.name,
@@ -90,7 +113,33 @@ export class SellerService {
 
     const savedSeller = await this.sellerRepository.save(seller);
 
-    const { password, ...sellerWithoutPassword } = savedSeller;
+    // =========================
+    // CREATE SHOP
+    // =========================
+
+    const shop = this.sellerShopRepository.create({
+      shopName: dto.shopName,
+      shopAddress: dto.shopAddress,
+      tradeLicense: dto.tradeLicense,
+      seller: savedSeller,
+    });
+
+    await this.sellerShopRepository.save(shop);
+
+    // =========================
+    // FETCH SELLER WITH SHOP
+    // =========================
+
+    const sellerWithShop = await this.sellerRepository.findOne({
+      where: {
+        id: savedSeller.id,
+      },
+      relations: {
+        shop: true,
+      },
+    });
+
+    const { password, ...sellerWithoutPassword } = sellerWithShop!;
 
     return {
       message: 'Seller registered successfully',
@@ -575,5 +624,146 @@ export class SellerService {
       message: `Shop with ID ${shopId} updated successfully`,
       data: updatedShop,
     };
+  }
+
+  // async getOrdersBySeller(id: number): Promise<object> {
+  //   const orders = await this.orderItemRepository.find({
+  //     where: { seller: { id } },
+  //     relations: ['order', 'product', 'product.seller'],
+  //   });
+
+  //   return {
+  //     message: 'Orders retrieved successfully',
+  //     data: orders,
+  //   };
+  // }
+
+  // async getSellerOrders(sellerId: number) {
+  //   const orders = await this.orderRepository.find({
+  //     relations: [
+  //       'customer',
+  //       'orderItems',
+  //       'orderItems.product',
+  //       'orderItems.seller',
+  //     ],
+
+  //     order: {
+  //       createdAt: 'DESC',
+  //     },
+  //   });
+
+  //   // keep only seller's items
+  //   const sellerOrders = orders
+  //     .map((order) => {
+  //       const sellerItems = order.orderItems.filter(
+  //         (item) => item.seller?.id === sellerId,
+  //       );
+
+  //       return {
+  //         ...order,
+  //         orderItems: sellerItems,
+  //       };
+  //     })
+  //     .filter((order) => order.orderItems.length > 0);
+
+  //   return sellerOrders;
+  // }
+
+  // async getSellerOrders(sellerId: number) {
+  //   const orderItems = await this.orderItemRepository.find({
+  //     where: {
+  //       seller: { id: sellerId },
+  //     },
+  //     relations: ['order', 'order.customer', 'product'],
+  //     order: {
+  //       order: {
+  //         createdAt: 'DESC',
+  //       },
+  //     },
+  //   });
+
+  //   // group by order
+  //   const grouped = new Map();
+
+  //   for (const item of orderItems) {
+  //     const orderId = item.order.id;
+
+  //     if (!grouped.has(orderId)) {
+  //       grouped.set(orderId, {
+  //         ...item.order,
+  //         orderItems: [],
+  //       });
+  //     }
+
+  //     grouped.get(orderId).orderItems.push(item);
+  //   }
+
+  //   return Array.from(grouped.values());
+  // }
+
+  async getSellerOrders(sellerId: number) {
+    const orderItems = await this.orderItemRepository.find({
+      where: {
+        seller: { id: sellerId },
+      },
+      relations: ['order', 'order.customer', 'product'],
+      order: {
+        order: {
+          createdAt: 'DESC',
+        },
+      },
+    });
+
+    const grouped = new Map();
+
+    for (const item of orderItems) {
+      const orderId = item.order.id;
+
+      if (!grouped.has(orderId)) {
+        grouped.set(orderId, {
+          id: item.order.id,
+          customer: item.order.customer,
+          paymentMethod: item.order.paymentMethod,
+          totalAmount: item.order.totalAmount,
+          createdAt: item.order.createdAt,
+
+          // 👇 IMPORTANT: seller-specific items
+          orderItems: [],
+        });
+      }
+
+      grouped.get(orderId).orderItems.push({
+        id: item.id,
+        product: item.product,
+        quantity: item.quantity,
+        price: item.price,
+
+        // 🔥 THIS is what you were missing
+        status: item.status,
+      });
+    }
+
+    return Array.from(grouped.values());
+  }
+
+  async updateOrderItemStatus(
+    itemId: number,
+    sellerId: number,
+    status: SellerOrderItemStatus,
+  ) {
+    const item = await this.orderItemRepository.findOne({
+      where: {
+        id: itemId,
+        seller: { id: sellerId },
+      },
+    });
+
+    if (!item) {
+      throw new Error('Order item not found');
+    }
+
+    item.status = status;
+
+    return this.orderItemRepository.save(item);
   }
 }
