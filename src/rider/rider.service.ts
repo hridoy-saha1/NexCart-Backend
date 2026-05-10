@@ -1,21 +1,24 @@
 import * as bcrypt from 'bcrypt';
 
-import { Injectable, NotFoundException } from '@nestjs/common';
 import {
+  Injectable,
+  NotFoundException,
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
+
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Rider } from './rider.entity';
 
+import { Rider, RiderStatus } from './rider.entity';
 import { Review } from './review.entity';
 import { Delivery } from './delivery.entity';
 import { Order } from 'src/customer/order.entity';
-import { riderLoginDto } from './rider.dto';
-import { JwtService } from '@nestjs/jwt';
-import { access } from 'fs';
 
+import { CreateRiderDto, riderLoginDto } from './rider.dto';
+import { CreateReviewDto } from './review.dto';
+
+import { JwtService } from '@nestjs/jwt';
 import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
@@ -23,77 +26,67 @@ export class RiderService {
   constructor(
     @InjectRepository(Rider)
     private riderRepository: Repository<Rider>,
+
     @InjectRepository(Review)
     private reviewRepository: Repository<Review>,
+
     @InjectRepository(Delivery)
     private deliveryRepository: Repository<Delivery>,
+
     @InjectRepository(Order)
     private orderRepository: Repository<Order>,
+
     private readonly mailerService: MailerService,
     private readonly jwtService: JwtService,
   ) {}
 
-  async sendRegistrationEmail(rider: Rider): Promise<void> {
+  // ==============================
+  // REGISTER RIDER (WITH IMAGE)
+  // ==============================
+  async createRider(
+    dto: CreateRiderDto,
+    profileImage?: Express.Multer.File,
+  ): Promise<Rider> {
     try {
-      await this.mailerService.sendMail({
-        to: rider.email,
-        subject: 'rider Registration Successful',
-        html: `
-        <h2>Welcome ${rider.name}</h2>
-        <p>Your rider account has been created successfully.</p>
-        <p><b>Email:</b> ${rider.email}</p>
-      `,
-      });
-    } catch (error) {
-      console.error('Email sending failed:', error);
-      // optional: don't break registration if email fails
-    }
-  }
-
-  async createRider(dto: any): Promise<Rider> {
-    try {
-      // Check existing rider
-      const existingRider = await this.riderRepository.findOne({
-        where: [{ email: dto.email }, { phone: dto.phone }, { name: dto.name }],
-      });
+      const existingRider =
+        await this.riderRepository.findOne({
+          where: [
+            { email: dto.email },
+            { phone: dto.phone },
+          ],
+        });
 
       if (existingRider) {
         if (existingRider.email === dto.email) {
           throw new BadRequestException('Email already exists');
         }
-
         if (existingRider.phone === dto.phone) {
-          throw new BadRequestException('Phone number already exists');
-        }
-
-        if (existingRider.name === dto.name) {
-          throw new BadRequestException('Name already exists');
+          throw new BadRequestException('Phone already exists');
         }
       }
 
-      // Hash password
       const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-      // Save rider
-      const rider = await this.riderRepository.save({
+      const rider = this.riderRepository.create({
         ...dto,
         password: hashedPassword,
+        status: dto.status || RiderStatus.OFFLINE,
+        profileImage: profileImage ? profileImage.filename : null,
       });
 
-      // await this.sendRegistrationEmail(rider);
+      const savedRider = await this.riderRepository.save(rider);
 
-      return rider;
+      return savedRider;
     } catch (error) {
-      // Throw known errors
-      if (error instanceof BadRequestException) {
-        throw error;
-      }
+      if (error instanceof BadRequestException) throw error;
 
-      // Unknown error
       throw new InternalServerErrorException('Failed to create rider');
     }
   }
 
+  // ==============================
+  // LOGIN
+  // ==============================
   async login(dto: riderLoginDto): Promise<object> {
     const rider = await this.riderRepository.findOne({
       where: { email: dto.email },
@@ -109,7 +102,12 @@ export class RiderService {
       throw new BadRequestException('Invalid email or password');
     }
 
-    const payload = { email: rider.email, sub: rider.id };
+    const payload = {
+      email: rider.email,
+      sub: rider.id,
+      role: 'rider',
+    };
+
     const token = this.jwtService.sign(payload);
 
     const { password, ...result } = rider;
@@ -121,75 +119,119 @@ export class RiderService {
     };
   }
 
+  // ==============================
+  // CHANGE STATUS
+  // ==============================
   async changeStatus(
     id: number,
-    status: 'available' | 'busy' | 'offline',
+    status: RiderStatus,
   ): Promise<Rider> {
     const rider = await this.riderRepository.findOne({ where: { id } });
 
     if (!rider) {
-      throw new BadRequestException(`Not Found Your id: ${id}`);
+      throw new NotFoundException(`Rider not found with id: ${id}`);
     }
 
     rider.status = status;
+
     return await this.riderRepository.save(rider);
   }
 
+  // ==============================
+  // GET AVAILABLE RIDERS
+  // ==============================
   async getAvailable(): Promise<Rider[]> {
     return await this.riderRepository.find({
-      where: { status: 'available' },
+      where: { status: RiderStatus.AVAILABLE },
     });
   }
 
+  // ==============================
+  // GET ALL RIDERS
+  // ==============================
   async getAllRiders(): Promise<Rider[]> {
     return await this.riderRepository.find({
-      relations: ['admins'],
+      relations: ['reviews', 'orders', 'admins'],
     });
   }
 
+  // ==============================
+  // GET SINGLE RIDER
+  // ==============================
   async getRider(id: number): Promise<Rider> {
     const rider = await this.riderRepository.findOne({
       where: { id },
+      relations: ['reviews', 'orders'],
     });
 
     if (!rider) {
-      throw new BadRequestException(`Not Found Your id: ${id}`);
+      throw new NotFoundException(`Rider not found with id: ${id}`);
     }
 
     return rider;
   }
 
-  async updateRider(id: number, dto: any): Promise<Rider> {
-    const rider = await this.riderRepository.findOne({ where: { id } });
+  // ==============================
+  // UPDATE RIDER (WITH IMAGE)
+  // ==============================
+  async updateRider(
+    id: number,
+    dto: Partial<CreateRiderDto>,
+    profileImage?: Express.Multer.File,
+  ): Promise<Rider> {
+    const rider = await this.riderRepository.findOne({
+      where: { id },
+    });
 
     if (!rider) {
-      throw new BadRequestException(`Not Found Your id: ${id}`);
+      throw new NotFoundException(`Rider not found with id: ${id}`);
+    }
+
+    if (dto.password) {
+      dto.password = await bcrypt.hash(dto.password, 10);
+    }
+
+    if (profileImage) {
+      rider.profileImage = profileImage.filename;
     }
 
     Object.assign(rider, dto);
+
     return await this.riderRepository.save(rider);
   }
 
+  // ==============================
+  // DELETE RIDER
+  // ==============================
   async deleteRider(id: number): Promise<object> {
-    const rider = await this.riderRepository.findOne({ where: { id } });
+    const rider = await this.riderRepository.findOne({
+      where: { id },
+    });
 
     if (!rider) {
-      throw new BadRequestException(`Not Found Your id: ${id}`);
+      throw new NotFoundException(`Rider not found with id: ${id}`);
     }
 
-    // return await this.riderRepository.remove(rider);
+    await this.riderRepository.remove(rider);
+
     return {
-      msg: 'Rider deleted successfully',
-      obj: await this.riderRepository.remove(rider),
+      message: 'Rider deleted successfully',
     };
   }
 
-  //
-  async addReview(id: number, dto: any): Promise<Review[]> {
-    const rider = await this.riderRepository.findOne({ where: { id } });
+  // ==============================
+  // ADD REVIEW
+  // ==============================
+  async addReview(
+    id: number,
+    dto: CreateReviewDto,
+  ): Promise<Review> {
+    const rider = await this.riderRepository.findOne({
+      where: { id },
+    });
 
     if (!rider) {
-      throw new BadRequestException(`Rider not found with id: ${id}`);
+      throw new NotFoundException(`Rider not found with id: ${id}`);
     }
 
     const review = this.reviewRepository.create({
@@ -200,14 +242,20 @@ export class RiderService {
     return await this.reviewRepository.save(review);
   }
 
-  // Get Reviews
+  // ==============================
+  // GET REVIEWS
+  // ==============================
   async getReviews(id: number): Promise<Review[]> {
     return await this.reviewRepository.find({
       where: { rider: { id } },
       relations: ['rider'],
+      order: { created_at: 'DESC' },
     });
   }
 
+  // ==============================
+  // UPDATE ORDER STATUS
+  // ==============================
   async updateOrderStatus(
     orderId: number,
     status: 'processing' | 'delivered',
@@ -215,6 +263,7 @@ export class RiderService {
   ): Promise<Order> {
     const order = await this.orderRepository.findOne({
       where: { id: orderId },
+      relations: ['rider'],
     });
 
     if (!order) {
@@ -222,42 +271,40 @@ export class RiderService {
     }
 
     if (!['processing', 'delivered'].includes(status)) {
-      throw new BadRequestException('Invalid status');
+      throw new BadRequestException('Invalid order status');
     }
 
-    //Prevent re-delivery
     if (order.status === 'delivered') {
       throw new BadRequestException('Order already delivered');
     }
 
+    const rider = await this.riderRepository.findOne({
+      where: { id: riderId },
+    });
+
+    if (!rider) {
+      throw new NotFoundException(`Rider not found with id: ${riderId}`);
+    }
+
     order.status = status;
 
-    //When delivered → insert into delivery table
+    const updatedOrder = await this.orderRepository.save(order);
+
     if (status === 'delivered') {
-      const rider = await this.riderRepository.findOne({
-        where: { id: riderId },
-      });
-
-      if (!rider) {
-        throw new BadRequestException(`Rider not found with id: ${riderId}`);
-      }
-
-      // Prevent duplicate delivery record
-      const existing = await this.deliveryRepository.findOne({
+      const existingDelivery = await this.deliveryRepository.findOne({
         where: { order: { id: orderId } },
       });
 
-      if (!existing) {
+      if (!existingDelivery) {
         const delivery = this.deliveryRepository.create({
           order,
           rider,
         });
+
         await this.deliveryRepository.save(delivery);
       }
-
-      return await this.orderRepository.save(order);
     }
 
-    return await this.orderRepository.save(order);
+    return updatedOrder;
   }
 }
