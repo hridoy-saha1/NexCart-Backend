@@ -62,6 +62,34 @@ export class AdminController {
     return this.adminService.resendOtp(); // no body needed
   }
 
+  // Approve admin
+  @Patch(':id/approve')
+  @UseGuards(JwtAuthGuard)
+  approveAdmin(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.approveAdmin(id);
+  }
+
+  // Deny/remove admin
+  @Patch(':id/deny')
+  @UseGuards(JwtAuthGuard)
+  denyAdmin(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.denyAdmin(id);
+  }
+
+  // Deactivate admin
+  @Patch(':id/deactivate')
+  @UseGuards(JwtAuthGuard)
+  deactivateAdmin(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.deactivateAdmin(id);
+  }
+
+  // Activate admin
+  @Patch(':id/activate')
+  @UseGuards(JwtAuthGuard)
+  activateAdmin(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.activateAdmin(id);
+  }
+
   // GET ALL
   @Get()
   @UseGuards(JwtAuthGuard)

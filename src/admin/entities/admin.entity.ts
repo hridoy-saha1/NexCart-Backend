@@ -27,6 +27,9 @@ export class AdminEntity {
   @Column({ type: 'varchar', length: 255 })
   password: string;
 
+  @Column({ default: false })
+  isApproved: boolean;
+
   // ACTIVE STATUS
   @Column({ default: false })
   isActive: boolean;

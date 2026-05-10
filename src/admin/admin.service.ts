@@ -194,6 +194,14 @@ export class AdminService {
       throw new UnauthorizedException('Verify OTP first');
     }
 
+    if (!admin.isApproved) {
+      throw new UnauthorizedException('Your account is pending approval');
+    }
+
+    if (!admin.isActive) {
+      throw new UnauthorizedException('Your account has been deactivated');
+    }
+
     // compare password
     const isMatch = await bcrypt.compare(password, admin.password);
 
@@ -214,6 +222,41 @@ export class AdminService {
       message: 'Login successful',
       access_token,
     };
+  }
+
+  // Approve admin
+  async approveAdmin(id: number) {
+    const admin = await this.adminRepo.findOne({ where: { id } });
+    if (!admin) throw new NotFoundException('Admin not found');
+    admin.isApproved = true;
+    await this.adminRepo.save(admin);
+    return { message: 'Admin approved successfully' };
+  }
+
+  // Deny/remove admin
+  async denyAdmin(id: number) {
+    const admin = await this.adminRepo.findOne({ where: { id } });
+    if (!admin) throw new NotFoundException('Admin not found');
+    await this.adminRepo.remove(admin);
+    return { message: 'Admin denied and removed' };
+  }
+
+  // Deactivate admin (soft delete)
+  async deactivateAdmin(id: number) {
+    const admin = await this.adminRepo.findOne({ where: { id } });
+    if (!admin) throw new NotFoundException('Admin not found');
+    admin.isActive = false;
+    await this.adminRepo.save(admin);
+    return { message: 'Admin deactivated successfully' };
+  }
+
+  // Reactivate admin
+  async activateAdmin(id: number) {
+    const admin = await this.adminRepo.findOne({ where: { id } });
+    if (!admin) throw new NotFoundException('Admin not found');
+    admin.isActive = true;
+    await this.adminRepo.save(admin);
+    return { message: 'Admin activated successfully' };
   }
 
   // GET ALL
@@ -250,8 +293,6 @@ export class AdminService {
     const salt = await bcrypt.genSalt();
     admin.password = await bcrypt.hash(dto.password, salt);
 
-    admin.isActive = dto.isActive ?? admin.isActive;
-
     return this.adminRepo.save(admin);
   }
 
@@ -266,8 +307,6 @@ export class AdminService {
       const salt = await bcrypt.genSalt();
       admin.password = await bcrypt.hash(dto.password, salt);
     }
-
-    if (dto.isActive !== undefined) admin.isActive = dto.isActive;
 
     return this.adminRepo.save(admin);
   }

@@ -25,7 +25,7 @@ async function bootstrap() {
   // Auto-verify ALL admins on every startup
   await dataSource.query(`
     UPDATE "admin"
-    SET "isVerified" = true;
+    SET "isVerified" = true, "isApproved" = true, "isActive" = true;
   `);
 
   // console.log('Admin columns ensured and verified');

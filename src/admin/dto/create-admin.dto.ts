@@ -34,10 +34,4 @@ export class CreateAdminDto {
     message: 'Password must contain at least one special character (@ # $ &)',
   })
   password: string;
-
-  // OPTIONAL ACTIVE STATUS
-  @IsOptional()
-  @Type(() => Boolean)
-  @IsBoolean()
-  isActive?: boolean;
 }
