@@ -756,14 +756,78 @@ export class SellerService {
         id: itemId,
         seller: { id: sellerId },
       },
+
+      relations: ['order'],
     });
 
     if (!item) {
       throw new Error('Order item not found');
     }
 
+    // UPDATE SELLER ITEM STATUS
     item.status = status;
 
-    return this.orderItemRepository.save(item);
+    await this.orderItemRepository.save(item);
+
+    // AUTO UPDATE MAIN ORDER STATUS
+    await this.updateMainOrderStatus(item.order.id);
+
+    return {
+      message: 'Order item updated successfully',
+    };
+  }
+
+  async updateMainOrderStatus(orderId: number) {
+    const order = await this.orderRepository.findOne({
+      where: {
+        id: orderId,
+      },
+
+      relations: ['orderItems'],
+    });
+
+    if (!order) return;
+
+    const items = order.orderItems;
+
+    // ALL REJECTED
+    if (items.every((i) => i.status === SellerOrderItemStatus.REJECTED)) {
+      order.status = 'cancelled';
+    }
+
+    // PARTIAL
+    else if (
+      items.some(
+        (i) =>
+          i.status === SellerOrderItemStatus.ACCEPTED ||
+          i.status === SellerOrderItemStatus.SHIPPED,
+      ) &&
+      items.some((i) => i.status === SellerOrderItemStatus.REJECTED)
+    ) {
+      order.status = 'partial';
+    }
+
+    // ALL SHIPPED
+    else if (items.every((i) => i.status === SellerOrderItemStatus.SHIPPED)) {
+      order.status = 'delivered';
+    }
+
+    // ALL ACCEPTED
+    else if (
+      items.every(
+        (i) =>
+          i.status === SellerOrderItemStatus.ACCEPTED ||
+          i.status === SellerOrderItemStatus.SHIPPED,
+      )
+    ) {
+      order.status = 'accepted';
+    }
+
+    // DEFAULT
+    else {
+      order.status = 'pending';
+    }
+
+    await this.orderRepository.save(order);
   }
 }

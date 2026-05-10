@@ -251,6 +251,24 @@ export class CustomerService {
     };
   }
 
+  async getMyOrders(customerId: number) {
+    const orders = await this.orderRepo.find({
+      where: {
+        customer: {
+          id: customerId,
+        },
+      },
+
+      relations: ['orderItems', 'orderItems.product'],
+
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+
+    return orders;
+  }
+
   // Get orders with products + seller
   async getOrderDetails() {
     return await this.orderRepo.find({
@@ -262,6 +280,31 @@ export class CustomerService {
         'rider',
       ],
     });
+  }
+  ////cart remove item
+  async removeCartItem(id: number) {
+    const item = await this.cartRepo.findOne({ where: { id } });
+    if (!item) throw new BadRequestException('Cart item not found');
+    return await this.cartRepo.remove(item);
+  }
+
+  //// Update cart quantity
+  async updateCartQuantity(id: number, quantity: number) {
+    const item = await this.cartRepo.findOne({
+      where: { id },
+    });
+
+    if (!item) {
+      throw new BadRequestException('Cart item not found');
+    }
+
+    item.quantity = quantity;
+
+    await this.cartRepo.save(item);
+
+    return {
+      message: 'Quantity updated',
+    };
   }
 
   // Update order status
