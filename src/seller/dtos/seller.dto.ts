@@ -36,6 +36,15 @@ export class SellerRegistrationDto {
   @IsNotEmpty()
   @MinLength(6, { message: 'Password must be at least 6 characters long' })
   password!: string;
+
+  @IsString()
+  shopName: string;
+
+  @IsString()
+  shopAddress: string;
+
+  @IsString()
+  tradeLicense: string;
 }
 
 export class UpdateSellerDto {

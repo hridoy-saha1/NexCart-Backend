@@ -14,6 +14,7 @@ import {
   BadRequestException,
   UseGuards,
   HttpCode,
+  Req,
 } from '@nestjs/common';
 
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -30,6 +31,7 @@ import {
 
 import { CreateProductDto, UpdateProductDto } from './dtos/product.dto';
 import { CreateSellerShopDto } from './dtos/seller-shop.dto';
+import { SellerOrderItemStatus } from 'src/customer/order-item.entity';
 
 @Controller('seller')
 export class SellerController {
@@ -228,4 +230,24 @@ export class SellerController {
   getSellerById(@Param('id', ParseIntPipe) id: number) {
     return this.sellerService.getSellerById(id);
   }
+
+  //get orders
+
+  @Get(':id/orders')
+  @UseGuards(JwtAuthGuard)
+  getOrdersBySeller(@Param('id', ParseIntPipe) id: number) {
+    return this.sellerService.getSellerOrders(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+@Patch('order-items/:id/status')
+updateOrderItemStatus(
+  @Param('id', ParseIntPipe) itemId: number,
+  @Body('status') status: SellerOrderItemStatus,
+  @Req() req: any,
+) {
+  const sellerId = req.user.id;
+
+  return this.sellerService.updateOrderItemStatus(itemId, sellerId, status);
+}
 }
