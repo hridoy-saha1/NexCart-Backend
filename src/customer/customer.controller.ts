@@ -14,6 +14,7 @@ import {
   Patch,
   UseGuards,
   Request,
+  Delete,
 } from '@nestjs/common';
 import { CustomerService } from './customer.service';
 import { CreateCustomerDto, UpdateProfileDto } from './customer.dto';
@@ -95,7 +96,7 @@ export class CustomerController {
   ) {
     return this.customerService.addToCart(customerId, productId);
   }
-////////cart item
+  ////////cart item
   @Get('cart/:customerId')
   getCart(
     @Param('customerId', ParseIntPipe)
@@ -113,11 +114,40 @@ export class CustomerController {
     return this.customerService.placeOrder(customerId, paymentMethod);
   }
 
+  @Get('my-orders/:customerId')
+  getMyOrders(
+    @Param('customerId', ParseIntPipe)
+    customerId: number,
+  ) {
+    return this.customerService.getMyOrders(customerId);
+  }
+
+  ////cart remove item
+  @Delete('cart/:id')
+  removeCartItem(
+    @Param('id', ParseIntPipe)
+    id: number,
+  ) {
+    return this.customerService.removeCartItem(id);
+  }
+
   // Get all orders
   @Get('orders-details')
   @UseGuards(JwtAuthGuard)
   getOrders() {
     return this.customerService.getOrderDetails();
+  }
+
+  // Update cart quantity
+  @Patch('cart/:id')
+  updateCartQuantity(
+    @Param('id', ParseIntPipe)
+    id: number,
+
+    @Body('quantity')
+    quantity: number,
+  ) {
+    return this.customerService.updateCartQuantity(id, quantity);
   }
 
   // Update order status
