@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { ProductEntity } from './product.entity';
 import { SellerShopEntity } from './seller-shop.entity';
+import { OrderItem } from 'src/customer/order-item.entity';
 
 @Entity('seller')
 export class SellerEntity {
@@ -36,4 +37,8 @@ export class SellerEntity {
 
   @OneToOne(() => SellerShopEntity, (shop) => shop.seller)
   shop: SellerShopEntity;
+
+  @OneToMany(() => OrderItem, (item) => item.seller)
+  orderItems: OrderItem[];
 }
+
