@@ -1,11 +1,32 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
-import { OneToMany, ManyToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToMany } from 'typeorm';
+
 import { Review } from './review.entity';
 import { AdminEntity } from 'src/admin/entities/admin.entity';
 import { Order } from 'src/customer/order.entity';
 
+// =========================
+// ENUMS
+// =========================
+export enum RiderStatus {
+  AVAILABLE = 'available',
+  BUSY = 'busy',
+  OFFLINE = 'offline',
+}
+
+export enum VehicleType {
+  BIKE = 'bike',
+  CAR = 'car',
+  SCOOTER = 'scooter',
+  BICYCLE = 'bicycle',
+  TRUCK = 'truck',
+}
+
+// =========================
+// ENTITY
+// =========================
 @Entity()
 export class Rider {
+
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -21,30 +42,52 @@ export class Rider {
   @Column()
   password: string;
 
+  // =========================
+  // STATUS
+  // =========================
   @Column({
     type: 'enum',
-    enum: ['available', 'busy', 'offline'],
-    default: 'offline',
+    enum: RiderStatus,
+    default: RiderStatus.OFFLINE,
   })
-  status: 'available' | 'busy' | 'offline';
+  status: RiderStatus;
 
-  @Column({ nullable: true })
-  vehicle_type: string;
+  // =========================
+  // VEHICLE TYPE
+  // =========================
+  @Column({
+    type: 'enum',
+    enum: VehicleType,
+    nullable: true,
+  })
+  vehicle_type?: VehicleType;
 
+  // =========================
+  // LOCATION
+  // =========================
   @Column({ nullable: true })
-  current_location: string;
+  current_location?: string;
 
-  @Column({ nullable: true })
-  image: string;
+  // =========================
+  // PROFILE IMAGE (FIXED)
+  // =========================
+  @Column({
+    type: 'varchar',
+    nullable: true,
+    default: null,
+  })
+  profileImage?: string | null;
+
+  // =========================
+  // RELATIONS
+  // =========================
 
   @OneToMany(() => Review, (review) => review.rider)
   reviews: Review[];
 
-  // Rider & Admin
   @ManyToMany(() => AdminEntity, (admin) => admin.riders)
   admins: AdminEntity[];
 
-  // Rider & Orders
   @OneToMany(() => Order, (order) => order.rider)
   orders: Order[];
 }

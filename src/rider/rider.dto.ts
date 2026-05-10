@@ -1,4 +1,14 @@
-import { IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+} from 'class-validator';
+
+import {
+  RiderStatus,
+  VehicleType,
+} from './rider.entity';
 
 export class CreateRiderDto {
 
@@ -14,21 +24,25 @@ export class CreateRiderDto {
   @IsString()
   password: string;
 
- @IsOptional()
-@IsEnum(['available', 'busy', 'offline'])
-status?: 'available' | 'busy' | 'offline';
-
+  // Rider Status
   @IsOptional()
-  @IsString()
-  vehicle_type?: string;
+  @IsEnum(RiderStatus)
+  status?: RiderStatus;
 
+  // Vehicle Type
+  @IsOptional()
+  @IsEnum(VehicleType)
+  vehicle_type?: VehicleType;
+
+  // Current Location
   @IsOptional()
   @IsString()
   current_location?: string;
 
+  // Profile Image
   @IsOptional()
   @IsString()
-  image?: string;
+  profileImage?: string;
 }
 
 export class riderLoginDto {
@@ -38,6 +52,4 @@ export class riderLoginDto {
 
   @IsString()
   password: string;
-
-
 }
