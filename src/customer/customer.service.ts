@@ -15,6 +15,7 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { MailService } from './mail.service';
 import { ProductEntity } from 'src/seller/entities/product.entity';
+import { profile } from 'console';
 
 @Injectable()
 export class CustomerService {
@@ -100,6 +101,8 @@ export class CustomerService {
     return {
       id: user.id,
       name: user.name,
+      email: user.email,
+      profilePic: user.profilePic,
     };
   }
   async updateProfile(
@@ -118,6 +121,8 @@ export class CustomerService {
     await this.userRepository.save(user);
     return {
       id: user.id,
+      name: user.name,
+      profilePic: user.profilePic,
       email: user.email,
     };
   }
@@ -163,39 +168,87 @@ export class CustomerService {
     return await this.cartRepo.save(item);
   }
 
-  // Place order
-  async placeOrder(customerId: number, paymentMethod: string) {
+  async getCart(customerId: number) {
     const customer = await this.userRepository.findOne({
       where: { id: customerId },
+
+      relations: ['cartItems', 'cartItems.product'],
+    });
+
+    if (!customer) {
+      throw new BadRequestException('Customer not found');
+    }
+
+    return customer.cartItems;
+  }
+
+  // Place order
+  async placeOrder(customerId: number, paymentMethod: string) {
+    // GET CUSTOMER WITH CART
+    const customer = await this.userRepository.findOne({
+      where: { id: customerId },
+
       relations: ['cartItems', 'cartItems.product', 'cartItems.product.seller'],
     });
 
-    if (!customer || customer.cartItems.length === 0)
+    // CHECK CART
+    if (!customer || customer.cartItems.length === 0) {
       throw new BadRequestException('Cart empty');
+    }
 
+    // VALID PAYMENT METHODS
     const validMethods = ['cash', 'card', 'bkash', 'nagad'];
-    if (!validMethods.includes(paymentMethod))
-      throw new BadRequestException('Invalid payment method');
 
+    // CHECK PAYMENT METHOD
+    if (!validMethods.includes(paymentMethod)) {
+      throw new BadRequestException('Invalid payment method');
+    }
+
+    // CALCULATE TOTAL
+    let total = 0;
+
+    for (const item of customer.cartItems) {
+      total += Number(item.product.price) * Number(item.quantity);
+    }
+
+    // CREATE ORDER
     const order = this.orderRepo.create({
       customer,
+
       paymentMethod,
+
       status: 'pending',
+
+      totalAmount: total,
     });
 
+    // CREATE ORDER ITEMS
     order.orderItems = customer.cartItems.map((item) =>
       this.orderItemRepo.create({
         product: item.product,
+
         quantity: item.quantity,
+
         seller: item.product.seller,
+
+        price: item.product.price,
       }),
     );
 
+    // SAVE ORDER
     await this.orderRepo.save(order);
 
-    await this.cartRepo.delete({ customer });
+    // CLEAR CART
+    await this.cartRepo.delete({
+      customer,
+    });
 
-    return order;
+    // RETURN ORDER
+    return {
+      message: 'Order placed successfully',
+
+      order,
+    };
   }
 
   // Get orders with products + seller

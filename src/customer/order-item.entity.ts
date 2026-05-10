@@ -17,6 +17,11 @@ export class OrderItem {
   @ManyToOne(() => SellerEntity)
   seller: SellerEntity;
 
+  @Column('decimal', {
+    default: 0,
+  })
+  price: number;
+
   @Column({ default: 1 })
   quantity: number;
 }

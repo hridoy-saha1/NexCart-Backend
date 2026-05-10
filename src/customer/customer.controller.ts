@@ -95,6 +95,14 @@ export class CustomerController {
   ) {
     return this.customerService.addToCart(customerId, productId);
   }
+////////cart item
+  @Get('cart/:customerId')
+  getCart(
+    @Param('customerId', ParseIntPipe)
+    customerId: number,
+  ) {
+    return this.customerService.getCart(customerId);
+  }
 
   // Place order
   @Post('orders/:customerId')
