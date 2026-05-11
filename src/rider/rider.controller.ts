@@ -183,4 +183,14 @@ export class RiderController {
   ) {
     return this.riderService.updateOrderStatus(id, dto.status, dto.riderId);
   }
+
+
+  @Get(':id/orders')
+  @UseGuards(JwtAuthGuard)
+  getOrders(
+    @Param('id', ParseIntPipe) id: number,
+  
+  ) {
+    return this.riderService.getOrders(id);
+  }
 }

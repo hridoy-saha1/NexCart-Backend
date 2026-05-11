@@ -307,4 +307,21 @@ export class RiderService {
 
     return updatedOrder;
   }
+
+  // ==============================
+  // GET RIDER'S ORDERS
+  // ==============================
+  async getOrders(id: number):Promise <Order[]> {
+    const orders = await this.riderRepository.findOne({
+      where: { id },
+    });
+
+    return  await this.orderRepository.find({
+      where: { rider: { id } },
+      relations: ['customer', 'orderItems', 'rider'], 
+      
+    });
+  }
+
+
 }
