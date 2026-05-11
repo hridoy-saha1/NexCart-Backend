@@ -146,7 +146,7 @@ export class AdminController {
 
   // DELETE
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.adminService.remove(id);
   }
