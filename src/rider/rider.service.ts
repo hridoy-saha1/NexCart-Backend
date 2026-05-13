@@ -15,7 +15,7 @@ import { Review } from './review.entity';
 import { Delivery } from './delivery.entity';
 import { Order } from 'src/customer/order.entity';
 
-import { CreateRiderDto, riderLoginDto } from './rider.dto';
+import { CreateRiderDto, ChangePasswordDto, riderLoginDto } from './rider.dto';
 import { CreateReviewDto } from './review.dto';
 
 import { JwtService } from '@nestjs/jwt';
@@ -198,6 +198,36 @@ export class RiderService {
     Object.assign(rider, dto);
 
     return await this.riderRepository.save(rider);
+  }
+
+  // ==============================
+  // CHANGE RIDER PASSWORD
+  // ==============================
+  async changePassword(
+    id: number,
+    dto: ChangePasswordDto,
+  ): Promise<object> {
+    const rider = await this.riderRepository.findOne({ where: { id } });
+
+    if (!rider) {
+      throw new NotFoundException(`Rider not found with id: ${id}`);
+    }
+
+    const isMatch = await bcrypt.compare(dto.currentPassword, rider.password);
+    if (!isMatch) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    if (dto.newPassword !== dto.confirmPassword) {
+      throw new BadRequestException('New passwords do not match');
+    }
+
+    rider.password = await bcrypt.hash(dto.newPassword, 10);
+    await this.riderRepository.save(rider);
+
+    return {
+      message: 'Password changed successfully',
+    };
   }
 
   // ==============================
