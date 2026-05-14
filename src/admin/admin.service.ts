@@ -16,6 +16,7 @@ import { LoginAdminDto } from './dto/login-admin.dto';
 import { JwtService } from '@nestjs/jwt';
 import { MailerService } from '@nestjs-modules/mailer';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { PusherService } from 'src/pusher/pusher.service';
 
 @Injectable()
 export class AdminService {
@@ -32,6 +33,7 @@ export class AdminService {
     private readonly jwtService: JwtService,
 
     private readonly mailerService: MailerService,
+    private readonly pusherService: PusherService,
   ) {}
 
   // OTP Generator
@@ -367,7 +369,24 @@ export class AdminService {
     }
 
     order.rider = rider;
-    return this.orderRepo.save(order);
+
+    order.status = 'rider_assigned';
+
+    const updatedOrder = await this.orderRepo.save(order);
+
+    await this.pusherService.trigger(
+      'order-channel',
+
+      'order-status-updated',
+
+      {
+        orderId: order.id,
+
+        status: updatedOrder.status,
+      },
+    );
+
+    return updatedOrder;
   }
 
   // Get Admin with Assigned Riders

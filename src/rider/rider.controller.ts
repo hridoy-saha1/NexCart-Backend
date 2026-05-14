@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
   Put,
+  Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -24,7 +25,7 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 
 import { RiderService } from './rider.service';
 
-import { CreateRiderDto, riderLoginDto } from './rider.dto';
+import { CreateRiderDto, ChangePasswordDto, riderLoginDto } from './rider.dto';
 
 import { Rider, RiderStatus } from './rider.entity';
 
@@ -85,6 +86,23 @@ export class RiderController {
     @Body('status') status: RiderStatus,
   ) {
     return this.riderService.changeStatus(id, status);
+  }
+
+  // =========================================
+  // CHANGE PASSWORD
+  @Patch(':id/change-password')
+  @UseGuards(JwtAuthGuard)
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  changePassword(
+    @Req() req: any,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    if (req.user?.id !== id) {
+      throw new BadRequestException('You can only change your own password');
+    }
+
+    return this.riderService.changePassword(id, dto);
   }
 
   // =========================================
@@ -182,5 +200,15 @@ export class RiderController {
     @Body() dto: UpdateOrderStatusDto,
   ) {
     return this.riderService.updateOrderStatus(id, dto.status, dto.riderId);
+  }
+
+
+  @Get(':id/orders')
+  @UseGuards(JwtAuthGuard)
+  getOrders(
+    @Param('id', ParseIntPipe) id: number,
+  
+  ) {
+    return this.riderService.getOrders(id);
   }
 }
