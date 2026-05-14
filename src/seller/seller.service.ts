@@ -214,6 +214,7 @@ export class SellerService {
       relations: {
         products: true,
         shop: true,
+        orderItems: true,
       },
     });
 

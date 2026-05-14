@@ -30,6 +30,18 @@ async function bootstrap() {
 
   // console.log('Admin columns ensured and verified');
 
+  // Migrate old pending orders to accepted so admin can see them
+  // await dataSource.query(`
+  //   UPDATE "orders"
+  //   SET status = 'accepted'
+  //   WHERE status = 'pending';
+  // `);
+
+  // console.log('✅ Orders migrated to accepted');
+
+  // const orders = await dataSource.query(`SELECT id, status FROM "orders"`);
+  // console.log('📦 Orders:', orders);
+
   // Enable CORS
   app.enableCors({
     origin: 'http://localhost:4000', // Allow only your frontend
