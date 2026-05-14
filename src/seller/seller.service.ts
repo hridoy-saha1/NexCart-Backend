@@ -29,6 +29,7 @@ import {
   CreateSellerShopDto,
   UpdateSellerShopDto,
 } from './dtos/seller-shop.dto';
+import { PusherService } from 'src/pusher/pusher.service';
 
 @Injectable()
 export class SellerService {
@@ -47,6 +48,7 @@ export class SellerService {
 
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
+    private readonly pusherService: PusherService,
 
     private readonly jwtService: JwtService,
   ) {}
@@ -829,5 +831,16 @@ export class SellerService {
     }
 
     await this.orderRepository.save(order);
+    await this.pusherService.trigger(
+      'order-channel',
+
+      'order-status-updated',
+
+      {
+        orderId: order.id,
+
+        status: order.status,
+      },
+    );
   }
 }

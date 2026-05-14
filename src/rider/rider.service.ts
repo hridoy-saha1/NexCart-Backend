@@ -20,6 +20,7 @@ import { CreateReviewDto } from './review.dto';
 
 import { JwtService } from '@nestjs/jwt';
 import { MailerService } from '@nestjs-modules/mailer';
+import { PusherService } from 'src/pusher/pusher.service';
 
 @Injectable()
 export class RiderService {
@@ -37,6 +38,7 @@ export class RiderService {
     private orderRepository: Repository<Order>,
 
     private readonly mailerService: MailerService,
+    private readonly pusherService: PusherService,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -48,13 +50,9 @@ export class RiderService {
     profileImage?: Express.Multer.File,
   ): Promise<Rider> {
     try {
-      const existingRider =
-        await this.riderRepository.findOne({
-          where: [
-            { email: dto.email },
-            { phone: dto.phone },
-          ],
-        });
+      const existingRider = await this.riderRepository.findOne({
+        where: [{ email: dto.email }, { phone: dto.phone }],
+      });
 
       if (existingRider) {
         if (existingRider.email === dto.email) {
@@ -122,10 +120,7 @@ export class RiderService {
   // ==============================
   // CHANGE STATUS
   // ==============================
-  async changeStatus(
-    id: number,
-    status: RiderStatus,
-  ): Promise<Rider> {
+  async changeStatus(id: number, status: RiderStatus): Promise<Rider> {
     const rider = await this.riderRepository.findOne({ where: { id } });
 
     if (!rider) {
@@ -203,10 +198,7 @@ export class RiderService {
   // ==============================
   // CHANGE RIDER PASSWORD
   // ==============================
-  async changePassword(
-    id: number,
-    dto: ChangePasswordDto,
-  ): Promise<object> {
+  async changePassword(id: number, dto: ChangePasswordDto): Promise<object> {
     const rider = await this.riderRepository.findOne({ where: { id } });
 
     if (!rider) {
@@ -252,10 +244,7 @@ export class RiderService {
   // ==============================
   // ADD REVIEW
   // ==============================
-  async addReview(
-    id: number,
-    dto: CreateReviewDto,
-  ): Promise<Review> {
+  async addReview(id: number, dto: CreateReviewDto): Promise<Review> {
     const rider = await this.riderRepository.findOne({
       where: { id },
     });
@@ -319,6 +308,17 @@ export class RiderService {
     order.status = status;
 
     const updatedOrder = await this.orderRepository.save(order);
+    await this.pusherService.trigger(
+      'order-channel',
+
+      'order-status-updated',
+
+      {
+        orderId: order.id,
+
+        status: updatedOrder.status,
+      },
+    );
 
     if (status === 'delivered') {
       const existingDelivery = await this.deliveryRepository.findOne({
@@ -341,17 +341,14 @@ export class RiderService {
   // ==============================
   // GET RIDER'S ORDERS
   // ==============================
-  async getOrders(id: number):Promise <Order[]> {
+  async getOrders(id: number): Promise<Order[]> {
     const orders = await this.riderRepository.findOne({
       where: { id },
     });
 
-    return  await this.orderRepository.find({
+    return await this.orderRepository.find({
       where: { rider: { id } },
-      relations: ['customer', 'orderItems', 'rider'], 
-      
+      relations: ['customer', 'orderItems', 'rider'],
     });
   }
-
-
 }
