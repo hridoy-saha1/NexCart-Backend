@@ -15,11 +15,12 @@ import { Review } from './review.entity';
 import { Delivery } from './delivery.entity';
 import { Order } from 'src/customer/order.entity';
 
-import { CreateRiderDto, riderLoginDto } from './rider.dto';
+import { CreateRiderDto, ChangePasswordDto, riderLoginDto } from './rider.dto';
 import { CreateReviewDto } from './review.dto';
 
 import { JwtService } from '@nestjs/jwt';
 import { MailerService } from '@nestjs-modules/mailer';
+import { PusherService } from 'src/pusher/pusher.service';
 
 @Injectable()
 export class RiderService {
@@ -37,6 +38,7 @@ export class RiderService {
     private orderRepository: Repository<Order>,
 
     private readonly mailerService: MailerService,
+    private readonly pusherService: PusherService,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -48,13 +50,9 @@ export class RiderService {
     profileImage?: Express.Multer.File,
   ): Promise<Rider> {
     try {
-      const existingRider =
-        await this.riderRepository.findOne({
-          where: [
-            { email: dto.email },
-            { phone: dto.phone },
-          ],
-        });
+      const existingRider = await this.riderRepository.findOne({
+        where: [{ email: dto.email }, { phone: dto.phone }],
+      });
 
       if (existingRider) {
         if (existingRider.email === dto.email) {
@@ -122,10 +120,7 @@ export class RiderService {
   // ==============================
   // CHANGE STATUS
   // ==============================
-  async changeStatus(
-    id: number,
-    status: RiderStatus,
-  ): Promise<Rider> {
+  async changeStatus(id: number, status: RiderStatus): Promise<Rider> {
     const rider = await this.riderRepository.findOne({ where: { id } });
 
     if (!rider) {
@@ -201,6 +196,33 @@ export class RiderService {
   }
 
   // ==============================
+  // CHANGE RIDER PASSWORD
+  // ==============================
+  async changePassword(id: number, dto: ChangePasswordDto): Promise<object> {
+    const rider = await this.riderRepository.findOne({ where: { id } });
+
+    if (!rider) {
+      throw new NotFoundException(`Rider not found with id: ${id}`);
+    }
+
+    const isMatch = await bcrypt.compare(dto.currentPassword, rider.password);
+    if (!isMatch) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    if (dto.newPassword !== dto.confirmPassword) {
+      throw new BadRequestException('New passwords do not match');
+    }
+
+    rider.password = await bcrypt.hash(dto.newPassword, 10);
+    await this.riderRepository.save(rider);
+
+    return {
+      message: 'Password changed successfully',
+    };
+  }
+
+  // ==============================
   // DELETE RIDER
   // ==============================
   async deleteRider(id: number): Promise<object> {
@@ -222,10 +244,7 @@ export class RiderService {
   // ==============================
   // ADD REVIEW
   // ==============================
-  async addReview(
-    id: number,
-    dto: CreateReviewDto,
-  ): Promise<Review> {
+  async addReview(id: number, dto: CreateReviewDto): Promise<Review> {
     const rider = await this.riderRepository.findOne({
       where: { id },
     });
@@ -289,6 +308,17 @@ export class RiderService {
     order.status = status;
 
     const updatedOrder = await this.orderRepository.save(order);
+    await this.pusherService.trigger(
+      'order-channel',
+
+      'order-status-updated',
+
+      {
+        orderId: order.id,
+
+        status: updatedOrder.status,
+      },
+    );
 
     if (status === 'delivered') {
       const existingDelivery = await this.deliveryRepository.findOne({
@@ -306,5 +336,19 @@ export class RiderService {
     }
 
     return updatedOrder;
+  }
+
+  // ==============================
+  // GET RIDER'S ORDERS
+  // ==============================
+  async getOrders(id: number): Promise<Order[]> {
+    const orders = await this.riderRepository.findOne({
+      where: { id },
+    });
+
+    return await this.orderRepository.find({
+      where: { rider: { id } },
+      relations: ['customer', 'orderItems', 'rider'],
+    });
   }
 }

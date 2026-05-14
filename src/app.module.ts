@@ -50,6 +50,7 @@ import { AdminModule } from './admin/admin.module';
 import { CustomerModule } from './customer/customer.module';
 import { SellerModule } from './seller/seller.module';
 import { RiderModule } from './rider/rider.module';
+import { PusherModule } from './pusher/pusher.module';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { RiderModule } from './rider/rider.module';
     CustomerModule,
     SellerModule, // MailModule is already inside here ✅
     RiderModule,
+    PusherModule,
   ],
   controllers: [AppController],
   providers: [AppService],

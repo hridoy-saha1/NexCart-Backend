@@ -30,6 +30,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { MailModule } from './modules/mail.module';
 import { OrderItem } from 'src/customer/order-item.entity';
 import { Order } from 'src/customer/order.entity';
+import { PusherModule } from 'src/pusher/pusher.module';
 
 @Module({
   imports: [
@@ -59,9 +60,10 @@ import { Order } from 'src/customer/order.entity';
       SellerEntity,
       ProductEntity,
       SellerShopEntity,
-     Order,
+      Order,
       OrderItem,
     ]),
+    PusherModule,
   ],
   controllers: [SellerController],
   providers: [SellerService, JwtStrategy],
