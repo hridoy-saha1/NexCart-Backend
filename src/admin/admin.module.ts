@@ -10,6 +10,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { MailerModule } from 'node_modules/@nestjs-modules/mailer/dist/mailer.module';
 import { ConfigModule } from '@nestjs/config';
+import { PusherModule } from 'src/pusher/pusher.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { ConfigModule } from '@nestjs/config';
         },
       },
     }),
+    PusherModule,
   ],
   controllers: [AdminController],
   providers: [AdminService, JwtStrategy],

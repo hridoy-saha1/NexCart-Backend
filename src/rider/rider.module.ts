@@ -10,31 +10,32 @@ import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule } from '@nestjs/config';
+import { PusherModule } from 'src/pusher/pusher.module';
 @Module({
   imports: [
-
-      ConfigModule.forRoot({
-        isGlobal: true,
-      }), 
-
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
 
     JwtModule.register({
       secret: 'mySecretKey',
       signOptions: { expiresIn: '1h' },
     }),
-    TypeOrmModule.forFeature([Rider,Review,Order,Delivery]),
-     MailerModule.forRoot({
+    TypeOrmModule.forFeature([Rider, Review, Order, Delivery]),
+    PusherModule,
+    MailerModule.forRoot({
       transport: {
         host: 'smtp.gmail.com',
         port: 587,
         secure: true,
         auth: {
-          user:process.env.Email ,
+          user: process.env.Email,
           pass: process.env.EmailPassword,
         },
       },
-    }),],
-  controllers: [RiderController,],
+    }),
+  ],
+  controllers: [RiderController],
   providers: [RiderService, JwtStrategy],
 })
 export class RiderModule {}
