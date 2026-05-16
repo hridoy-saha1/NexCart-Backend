@@ -16,6 +16,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule } from '@nestjs/config';
 import { MailService } from './mail.service';
 import { PassportModule } from '@nestjs/passport';
+import { PusherModule } from 'src/pusher/pusher.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { PassportModule } from '@nestjs/passport';
       OrderItem,
     ]),
 
+    PusherModule,
     // ✅ JWT
     PassportModule,
     JwtModule.register({

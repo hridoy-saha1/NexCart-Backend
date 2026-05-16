@@ -16,6 +16,7 @@ import { JwtService } from '@nestjs/jwt';
 import { MailService } from './mail.service';
 import { ProductEntity } from 'src/seller/entities/product.entity';
 import { profile } from 'console';
+import { PusherService } from 'src/pusher/pusher.service';
 
 @Injectable()
 export class CustomerService {
@@ -34,6 +35,7 @@ export class CustomerService {
     private orderItemRepo: Repository<OrderItem>,
     private readonly jwtService: JwtService,
     private mailService: MailService,
+    private readonly pusherService: PusherService,
   ) {}
   async createUser(dto: CreateCustomerDto): Promise<customerEntity> {
     try {
@@ -237,6 +239,28 @@ export class CustomerService {
 
     // SAVE ORDER
     await this.orderRepo.save(order);
+    await this.pusherService.trigger(
+      'seller-channel',
+
+      'new-order',
+
+      {
+        orderId: order.id,
+
+        message: 'New order received',
+      },
+    );
+    await this.pusherService.trigger(
+      'admin-channel',
+
+      'admin-new-order',
+
+      {
+        orderId: order.id,
+
+        message: 'New customer order placed',
+      },
+    );
 
     // CLEAR CART
     await this.cartRepo.delete({
