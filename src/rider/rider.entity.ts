@@ -85,8 +85,8 @@ export class Rider {
   @OneToMany(() => Review, (review) => review.rider)
   reviews: Review[];
 
-  @ManyToMany(() => AdminEntity, (admin) => admin.riders)
-  admins: AdminEntity[];
+  // @ManyToMany(() => AdminEntity, (admin) => admin.riders)
+  // admins: AdminEntity[];
 
   @OneToMany(() => Order, (order) => order.rider)
   orders: Order[];

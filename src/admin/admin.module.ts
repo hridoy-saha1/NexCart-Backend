@@ -3,14 +3,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminEntity } from './entities/admin.entity';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
-import { Rider } from 'src/rider/rider.entity';
-import { Order } from 'src/customer/order.entity';
+import { Rider } from '../rider/rider.entity';
+import { Order } from '../customer/order.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
-import { MailerModule } from 'node_modules/@nestjs-modules/mailer/dist/mailer.module';
+import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule } from '@nestjs/config';
-import { PusherModule } from 'src/pusher/pusher.module';
+import { PusherModule } from '../pusher/pusher.module';
 
 @Module({
   imports: [

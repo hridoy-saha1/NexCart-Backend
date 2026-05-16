@@ -9,14 +9,14 @@ import { Repository, Like } from 'typeorm';
 import { AdminEntity } from './entities/admin.entity';
 import { CreateAdminDto } from './dto/create-admin.dto';
 import { UpdateAdminDto } from './dto/update-admin.dto';
-import { Order } from 'src/customer/order.entity';
-import { Rider } from 'src/rider/rider.entity';
+import { Order } from '../customer/order.entity';
+import { Rider } from '../rider/rider.entity';
 import * as bcrypt from 'bcrypt';
 import { LoginAdminDto } from './dto/login-admin.dto';
 import { JwtService } from '@nestjs/jwt';
 import { MailerService } from '@nestjs-modules/mailer';
-import { VerifyOtpDto } from './dto/verify-otp.dto';
-import { PusherService } from 'src/pusher/pusher.service';
+// import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { PusherService } from '../pusher/pusher.service';
 
 @Injectable()
 export class AdminService {
@@ -37,9 +37,9 @@ export class AdminService {
   ) {}
 
   // OTP Generator
-  generateOtp(): string {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-  }
+  // generateOtp(): string {
+  //   return Math.floor(100000 + Math.random() * 900000).toString();
+  // }
 
   // create
   async create(dto: CreateAdminDto): Promise<AdminEntity> {
@@ -57,45 +57,59 @@ export class AdminService {
     const hashedPassword = await bcrypt.hash(dto.password, salt);
 
     // GENERATE OTP
-    const otp = this.generateOtp();
+    // const otp = this.generateOtp();
 
     // CREATE ADMIN
     const admin = this.adminRepo.create({
       ...dto,
       password: hashedPassword,
-      otp,
-      otpExpiry: new Date(Date.now() + 5 * 60 * 1000),
-      isVerified: false,
+      // otp,
+      // otpExpiry: new Date(Date.now() + 5 * 60 * 1000),
+      // isVerified: false,
+      isApproved: false,
     });
 
     const savedAdmin = await this.adminRepo.save(admin);
 
     // SEND OTP EMAIL
+    //   try {
+    //     await this.mailerService.sendMail({
+    //       to: savedAdmin.email,
+    //       subject: 'Verify Your Account - NexCart',
+    //       html: `
+    //   <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">
+
+    //     <h3>OTP Verification</h3>
+
+    //     <p>Hello ${savedAdmin.name},</p>
+
+    //     <p>Your OTP code is:</p>
+
+    //     <p style="font-size: 20px; font-weight: bold;">
+    //       ${otp}
+    //     </p>
+
+    //     <p>This OTP will expire in 5 minutes.</p>
+
+    //     <p>If you didn’t request this, please ignore this email.</p>
+
+    //   </div>
+    // `,
+    //     });
+    // Send welcome email only
     try {
       await this.mailerService.sendMail({
         to: savedAdmin.email,
-        subject: 'Verify Your Account - NexCart',
+        subject: 'Welcome to NexCart Admin',
         html: `
-    <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">
-      
-      <h3>OTP Verification</h3>
-
-      <p>Hello ${savedAdmin.name},</p>
-
-      <p>Your OTP code is:</p>
-
-      <p style="font-size: 20px; font-weight: bold;">
-        ${otp}
-      </p>
-
-      <p>This OTP will expire in 5 minutes.</p>
-
-      <p>If you didn’t request this, please ignore this email.</p>
-
-    </div>
-  `,
+        <div style="font-family: Arial, sans-serif; color: #333;">
+          <h2>Welcome, ${savedAdmin.name}!</h2>
+          <p>Your admin account has been created successfully.</p>
+          <p>Your request is pending approval by an existing admin.</p>
+          <p>You will be able to login once approved.</p>
+        </div>
+      `,
       });
-      console.log('Email sent successfully');
     } catch (error) {
       console.error('Email error:', error);
     }
@@ -104,80 +118,80 @@ export class AdminService {
   }
 
   // VERIFY OTP
-  async verifyOtp(dto: VerifyOtpDto) {
-    const { email, otp } = dto;
+  // async verifyOtp(dto: VerifyOtpDto) {
+  //   const { email, otp } = dto;
 
-    const admin = await this.adminRepo.findOne({ where: { email } });
+  //   const admin = await this.adminRepo.findOne({ where: { email } });
 
-    if (!admin) throw new NotFoundException('Admin not found');
+  //   if (!admin) throw new NotFoundException('Admin not found');
 
-    if (admin.isVerified) {
-      throw new BadRequestException('Already verified');
-    }
+  //   if (admin.isVerified) {
+  //     throw new BadRequestException('Already verified');
+  //   }
 
-    if (!admin.otpExpiry) {
-      throw new BadRequestException('OTP not found');
-    }
+  //   if (!admin.otpExpiry) {
+  //     throw new BadRequestException('OTP not found');
+  //   }
 
-    if (admin.otp !== otp) {
-      throw new BadRequestException('Invalid OTP');
-    }
+  //   if (admin.otp !== otp) {
+  //     throw new BadRequestException('Invalid OTP');
+  //   }
 
-    if (admin.otpExpiry && admin.otpExpiry < new Date()) {
-      throw new BadRequestException('OTP expired');
-    }
+  //   if (admin.otpExpiry && admin.otpExpiry < new Date()) {
+  //     throw new BadRequestException('OTP expired');
+  //   }
 
-    admin.isVerified = true;
-    admin.otp = null;
-    admin.otpExpiry = null;
+  //   admin.isVerified = true;
+  //   admin.otp = null;
+  //   admin.otpExpiry = null;
 
-    await this.adminRepo.save(admin);
+  //   await this.adminRepo.save(admin);
 
-    return {
-      message: 'OTP verified successfully',
-    };
-  }
+  //   return {
+  //     message: 'OTP verified successfully',
+  //   };
+  // }
 
-  async resendOtp() {
-    // Find the latest unverified admin
-    const admin = await this.adminRepo.findOne({
-      where: { isVerified: false },
-      order: { createdAt: 'DESC' }, // get the most recently registered
-    });
+  // async resendOtp() {
+  //   // Find the latest unverified admin
+  //   const admin = await this.adminRepo.findOne({
+  //     where: { isVerified: false },
+  //     order: { createdAt: 'DESC' }, // get the most recently registered
+  //   });
 
-    if (!admin) throw new NotFoundException('No pending verification found');
+  //   if (!admin) throw new NotFoundException('No pending verification found');
 
-    const otp = this.generateOtp();
-    admin.otp = otp;
-    admin.otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
-    await this.adminRepo.save(admin);
+  //   const otp = this.generateOtp();
+  //   admin.otp = otp;
+  //   admin.otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
+  //   await this.adminRepo.save(admin);
 
-    await this.mailerService.sendMail({
-      to: admin.email,
-      subject: 'Verify Your Account - NexCart',
-      html: `
-    <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">
-      
-      <h3>OTP Verification</h3>
+  //   await this.mailerService.sendMail({
+  //     to: admin.email,
+  //     subject: 'Verify Your Account - NexCart',
+  //     html: `
+  //   <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">
 
-      <p>Hello ${admin.name},</p>
+  //     <h3>OTP Verification</h3>
 
-      <p>Your OTP code is:</p>
+  //     <p>Hello ${admin.name},</p>
 
-      <p style="font-size: 20px; font-weight: bold;">
-        ${otp}
-      </p>
+  //     <p>Your OTP code is:</p>
 
-      <p>This OTP will expire in 5 minutes.</p>
+  //     <p style="font-size: 20px; font-weight: bold;">
+  //       ${otp}
+  //     </p>
 
-      <p>If you didn’t request this, please ignore this email.</p>
+  //     <p>This OTP will expire in 5 minutes.</p>
 
-    </div>
-  `,
-    });
+  //     <p>If you didn’t request this, please ignore this email.</p>
 
-    return { message: 'OTP resent successfully' };
-  }
+  //   </div>
+  // `,
+  //   });
+
+  //   return { message: 'OTP resent successfully' };
+  // }
 
   // login
   async login(dto: LoginAdminDto) {
@@ -192,9 +206,9 @@ export class AdminService {
       throw new UnauthorizedException('Invalid email');
     }
 
-    if (!admin.isVerified) {
-      throw new UnauthorizedException('Verify OTP first');
-    }
+    // if (!admin.isVerified) {
+    //   throw new UnauthorizedException('Verify OTP first');
+    // }
 
     if (!admin.isApproved) {
       throw new UnauthorizedException('Your account is pending approval');
@@ -317,7 +331,7 @@ export class AdminService {
   async remove(id: number): Promise<{ message: string }> {
     const admin = await this.adminRepo.findOne({
       where: { id },
-      relations: ['riders'], // load relations
+      // relations: ['riders'], // load relations
     });
 
     if (!admin) {
@@ -325,9 +339,9 @@ export class AdminService {
     }
 
     // remove relations
-    admin.riders = [];
+    // admin.riders = [];
 
-    await this.adminRepo.save(admin); // clear join table
+    // await this.adminRepo.save(admin); // clear join table
 
     await this.adminRepo.remove(admin);
 
@@ -337,24 +351,24 @@ export class AdminService {
   }
 
   // Assign Rider to Admin
-  async assignRider(adminId: number, riderId: number): Promise<AdminEntity> {
-    const admin = await this.adminRepo.findOne({
-      where: { id: adminId },
-      relations: ['riders'],
-    });
+  // async assignRider(adminId: number, riderId: number): Promise<AdminEntity> {
+  //   const admin = await this.adminRepo.findOne({
+  //     where: { id: adminId },
+  //     relations: ['riders'],
+  //   });
 
-    if (!admin) throw new NotFoundException('Admin not found');
+  //   if (!admin) throw new NotFoundException('Admin not found');
 
-    const rider = await this.riderRepo.findOneBy({ id: riderId });
-    if (!rider) throw new NotFoundException('Rider not found');
+  //   const rider = await this.riderRepo.findOneBy({ id: riderId });
+  //   if (!rider) throw new NotFoundException('Rider not found');
 
-    if (admin.riders.some((r) => r.id === rider.id)) {
-      throw new BadRequestException('Rider already assigned');
-    }
+  // if (admin.riders.some((r) => r.id === rider.id)) {
+  //   throw new BadRequestException('Rider already assigned');
+  // }
 
-    admin.riders.push(rider);
-    return this.adminRepo.save(admin);
-  }
+  // admin.riders.push(rider);
+  //   return this.adminRepo.save(admin);
+  // }
 
   // Assign Rider to Order
   async assignRiderToOrder(orderId: number, riderId: number): Promise<Order> {
@@ -369,19 +383,16 @@ export class AdminService {
     }
 
     order.rider = rider;
-
     order.status = 'rider_assigned';
 
     const updatedOrder = await this.orderRepo.save(order);
 
     await this.pusherService.trigger(
       'order-channel',
-
       'order-status-updated',
 
       {
         orderId: order.id,
-
         status: updatedOrder.status,
       },
     );
@@ -390,31 +401,31 @@ export class AdminService {
   }
 
   // Get Admin with Assigned Riders
-  async getAdminWithRiders(id: number): Promise<AdminEntity> {
-    const admin = await this.adminRepo.findOne({
-      where: { id },
-      relations: ['riders'],
-    });
+  // async getAdminWithRiders(id: number): Promise<AdminEntity> {
+  //   const admin = await this.adminRepo.findOne({
+  //     where: { id },
+  //     relations: ['riders'],
+  //   });
 
-    if (!admin) throw new NotFoundException('Admin not found');
+  //   if (!admin) throw new NotFoundException('Admin not found');
 
-    return admin;
-  }
+  //   return admin;
+  // }
 
   // Remove Rider from Admin
-  async removeRider(adminId: number, riderId: number): Promise<AdminEntity> {
-    const admin = await this.adminRepo.findOne({
-      where: { id: adminId },
-      relations: ['riders'],
-    });
+  // async removeRider(adminId: number, riderId: number): Promise<AdminEntity> {
+  //   const admin = await this.adminRepo.findOne({
+  //     where: { id: adminId },
+  //     relations: ['riders'],
+  //   });
 
-    if (!admin) throw new NotFoundException('Admin not found');
+  //   if (!admin) throw new NotFoundException('Admin not found');
 
-    const rider = admin.riders.find((r) => r.id === riderId);
-    if (!rider) throw new NotFoundException('Rider not found');
+  //   const rider = admin.riders.find((r) => r.id === riderId);
+  //   if (!rider) throw new NotFoundException('Rider not found');
 
-    admin.riders = admin.riders.filter((r) => r.id !== riderId);
+  //   admin.riders = admin.riders.filter((r) => r.id !== riderId);
 
-    return this.adminRepo.save(admin);
-  }
+  //   return this.adminRepo.save(admin);
+  // }
 }

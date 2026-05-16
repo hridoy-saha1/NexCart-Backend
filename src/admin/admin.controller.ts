@@ -19,7 +19,7 @@ import { AssignRiderDto } from './dto/assign-rider.dto';
 import { LoginAdminDto } from './dto/login-admin.dto';
 import { UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { VerifyOtpDto } from './dto/verify-otp.dto';
+// import { VerifyOtpDto } from './dto/verify-otp.dto';
 
 @Controller('admin')
 export class AdminController {
@@ -51,16 +51,16 @@ export class AdminController {
     return this.adminService.create(dto);
   }
 
-  @Post('verify-otp')
-  @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
-  verifyOtp(@Body() dto: VerifyOtpDto) {
-    return this.adminService.verifyOtp(dto);
-  }
+  // @Post('verify-otp')
+  // @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
+  // verifyOtp(@Body() dto: VerifyOtpDto) {
+  //   return this.adminService.verifyOtp(dto);
+  // }
 
-  @Post('resend-otp')
-  resendOtp() {
-    return this.adminService.resendOtp(); // no body needed
-  }
+  // @Post('resend-otp')
+  // resendOtp() {
+  //   return this.adminService.resendOtp(); // no body needed
+  // }
 
   // Approve admin
   @Patch(':id/approve')
@@ -152,37 +152,37 @@ export class AdminController {
   }
 
   // Assign Rider to Admin
-  @Post(':adminId/riders')
-  @UseGuards(JwtAuthGuard)
-  @UsePipes(
-    new ValidationPipe({
-      transform: true,
-      forbidNonWhitelisted: true,
-    }),
-  )
-  assignRider(
-    @Param('adminId', ParseIntPipe) adminId: number,
-    @Body() dto: AssignRiderDto,
-  ) {
-    return this.adminService.assignRider(adminId, dto.riderId);
-  }
+  // @Post(':adminId/riders')
+  // @UseGuards(JwtAuthGuard)
+  // @UsePipes(
+  //   new ValidationPipe({
+  //     transform: true,
+  //     forbidNonWhitelisted: true,
+  //   }),
+  // )
+  // assignRider(
+  //   @Param('adminId', ParseIntPipe) adminId: number,
+  //   @Body() dto: AssignRiderDto,
+  // ) {
+  //   return this.adminService.assignRider(adminId, dto.riderId);
+  // }
 
   // Fetch Admin with Riders
-  @Get(':adminId/riders')
-  @UseGuards(JwtAuthGuard)
-  getRiders(@Param('adminId', ParseIntPipe) adminId: number) {
-    return this.adminService.getAdminWithRiders(adminId);
-  }
+  // @Get(':adminId/riders')
+  // @UseGuards(JwtAuthGuard)
+  // getRiders(@Param('adminId', ParseIntPipe) adminId: number) {
+  //   return this.adminService.getAdminWithRiders(adminId);
+  // }
 
   // Remove Rider from Admin
-  @Delete(':adminId/riders/:riderId')
-  @UseGuards(JwtAuthGuard)
-  removeRider(
-    @Param('adminId', ParseIntPipe) adminId: number,
-    @Param('riderId', ParseIntPipe) riderId: number,
-  ) {
-    return this.adminService.removeRider(adminId, riderId);
-  }
+  // @Delete(':adminId/riders/:riderId')
+  // @UseGuards(JwtAuthGuard)
+  // removeRider(
+  //   @Param('adminId', ParseIntPipe) adminId: number,
+  //   @Param('riderId', ParseIntPipe) riderId: number,
+  // ) {
+  //   return this.adminService.removeRider(adminId, riderId);
+  // }
 
   // Assign Rider to Order
   @Patch('orders/:orderId/rider')
