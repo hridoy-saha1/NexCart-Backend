@@ -145,11 +145,11 @@ export class AdminController {
   }
 
   // DELETE
-  @Delete(':id')
+  // @Delete(':id')
   // @UseGuards(JwtAuthGuard)
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.adminService.remove(id);
-  }
+  // remove(@Param('id', ParseIntPipe) id: number) {
+  //   return this.adminService.remove(id);
+  // }
 
   // Assign Rider to Admin
   // @Post(':adminId/riders')

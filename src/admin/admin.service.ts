@@ -245,6 +245,7 @@ export class AdminService {
     const admin = await this.adminRepo.findOne({ where: { id } });
     if (!admin) throw new NotFoundException('Admin not found');
     admin.isApproved = true;
+    admin.isActive = true;
     await this.adminRepo.save(admin);
     return { message: 'Admin approved successfully' };
   }
@@ -328,27 +329,27 @@ export class AdminService {
   }
 
   // DELETE
-  async remove(id: number): Promise<{ message: string }> {
-    const admin = await this.adminRepo.findOne({
-      where: { id },
-      // relations: ['riders'], // load relations
-    });
+  // async remove(id: number): Promise<{ message: string }> {
+  //   const admin = await this.adminRepo.findOne({
+  //     where: { id },
+  // relations: ['riders'], // load relations
+  // });
 
-    if (!admin) {
-      throw new NotFoundException('Admin not found');
-    }
+  // if (!admin) {
+  //   throw new NotFoundException('Admin not found');
+  // }
 
-    // remove relations
-    // admin.riders = [];
+  // remove relations
+  // admin.riders = [];
 
-    // await this.adminRepo.save(admin); // clear join table
+  // await this.adminRepo.save(admin); // clear join table
 
-    await this.adminRepo.remove(admin);
+  //   await this.adminRepo.remove(admin);
 
-    return {
-      message: 'Admin deleted successfully',
-    };
-  }
+  //   return {
+  //     message: 'Admin deleted successfully',
+  //   };
+  // }
 
   // Assign Rider to Admin
   // async assignRider(adminId: number, riderId: number): Promise<AdminEntity> {
