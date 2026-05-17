@@ -33,6 +33,7 @@ import { CreateReviewDto } from './review.dto';
 import { Review } from './review.entity';
 
 import { UpdateOrderStatusDto } from './update-order-status.dto';
+import { DeliveryStatus } from './delivery.entity';
 
 @Controller('riders')
 export class RiderController {
@@ -202,13 +203,26 @@ export class RiderController {
     return this.riderService.updateOrderStatus(id, dto.status, dto.riderId);
   }
 
-
   @Get(':id/orders')
-  @UseGuards(JwtAuthGuard)
-  getOrders(
-    @Param('id', ParseIntPipe) id: number,
-  
+  getOrders(@Param('id') id: number) {
+    return this.riderService.getAcceptedOrders(Number(id));
+  }
+
+  @Patch('delivery/:id/status')
+  updateDeliveryStatus(
+    @Param('id') id: number,
+    @Body('status') status: DeliveryStatus,
   ) {
-    return this.riderService.getOrders(id);
+    return this.riderService.updateDeliveryStatus(id, status);
+  }
+
+  @Get(':id/deliveries')
+  getRiderDeliveries(@Param('id') id: number) {
+    return this.riderService.getRiderDeliveries(Number(id));
+  }
+
+  @Patch('delivery/:id/delivered')
+  markDelivered(@Param('id') id: number) {
+    return this.riderService.markOrderDelivered(Number(id));
   }
 }
