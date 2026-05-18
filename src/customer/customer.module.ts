@@ -35,6 +35,8 @@ import { PusherModule } from 'src/pusher/pusher.module';
     ]),
     PusherModule,
 
+    PusherModule,
+
     // ✅ JWT
     PassportModule,
     JwtModule.register({
