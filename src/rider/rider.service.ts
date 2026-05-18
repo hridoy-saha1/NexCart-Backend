@@ -1,5 +1,4 @@
 import * as bcrypt from 'bcrypt';
-
 import {
   Injectable,
   NotFoundException,
@@ -12,7 +11,7 @@ import { Repository } from 'typeorm';
 
 import { Rider, RiderStatus } from './rider.entity';
 import { Review } from './review.entity';
-import { Delivery } from './delivery.entity';
+import { Delivery, DeliveryStatus } from './delivery.entity';
 import { Order } from 'src/customer/order.entity';
 
 import { CreateRiderDto, ChangePasswordDto, riderLoginDto } from './rider.dto';
@@ -341,14 +340,67 @@ export class RiderService {
   // ==============================
   // GET RIDER'S ORDERS
   // ==============================
-  async getOrders(id: number): Promise<Order[]> {
-    const orders = await this.riderRepository.findOne({
-      where: { id },
-    });
-
-    return await this.orderRepository.find({
-      where: { rider: { id } },
-      relations: ['customer', 'orderItems', 'rider'],
+  async getAcceptedOrders(riderId: number) {
+    return await this.deliveryRepository.find({
+      where: {
+        rider: { id: riderId },
+        status: DeliveryStatus.ACCEPTED,
+      },
+      relations: ['order', 'order.customer', 'order.orderItems'],
     });
   }
+  async updateDeliveryStatus(deliveryId: number, status: DeliveryStatus) {
+    const delivery = await this.deliveryRepository.findOne({
+      where: { id: deliveryId },
+    });
+
+    if (!delivery) {
+      throw new NotFoundException('Delivery not found');
+    }
+
+    if (!Object.values(DeliveryStatus).includes(status)) {
+      throw new BadRequestException('Invalid delivery status');
+    }
+
+    delivery.status = status;
+
+    return await this.deliveryRepository.save(delivery);
+  }
+
+  async getRiderDeliveries(riderId: number) {
+    return await this.deliveryRepository.find({
+      where: {
+        rider: {
+          id: riderId,
+        },
+      },
+
+      relations: ['order', 'rider'],
+    });
+  }
+
+async markOrderDelivered(deliveryId: number) {
+  const delivery = await this.deliveryRepository.findOne({
+    where: { id: deliveryId },
+    relations: ['order'],
+  });
+
+  if (!delivery) {
+    throw new NotFoundException('Delivery not found');
+  }
+
+  // update order status
+  delivery.order.status = 'delivered';
+
+  await this.orderRepository.save(delivery.order);
+
+  // optional but recommended: update delivery too
+  delivery.status = DeliveryStatus.ACCEPTED; // or you can add DELIVERED enum
+  await this.deliveryRepository.save(delivery);
+
+  return {
+    message: 'Order marked as delivered',
+  };
+}
+
 }
