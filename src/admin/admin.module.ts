@@ -11,10 +11,11 @@ import { PassportModule } from '@nestjs/passport';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule } from '@nestjs/config';
 import { PusherModule } from '../pusher/pusher.module';
+import { Delivery } from 'src/rider/delivery.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([AdminEntity, Rider, Order]),
+    TypeOrmModule.forFeature([AdminEntity, Rider, Order, Delivery]),
     //  LOAD ENV FILE
     ConfigModule.forRoot({
       isGlobal: true,
