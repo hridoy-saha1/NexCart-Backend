@@ -199,4 +199,11 @@ export class AdminController {
   ) {
     return this.adminService.assignRiderToOrder(orderId, dto.riderId);
   }
+
+  // Admin resets order for reassignment
+  @Patch('orders/:orderId/reset')
+  @UseGuards(JwtAuthGuard)
+  resetOrderForReassignment(@Param('orderId', ParseIntPipe) orderId: number) {
+    return this.adminService.resetOrderForReassignment(orderId);
+  }
 }

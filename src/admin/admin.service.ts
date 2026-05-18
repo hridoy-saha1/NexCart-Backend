@@ -429,4 +429,19 @@ export class AdminService {
 
   //   return this.adminRepo.save(admin);
   // }
+
+  async resetOrderForReassignment(orderId: number) {
+    const order = await this.orderRepo.findOne({
+      where: { id: orderId },
+      relations: ['rider'],
+    });
+
+    if (!order) throw new NotFoundException('Order not found');
+
+    order.status = 'accepted';
+    order.rider = null!;
+    await this.orderRepo.save(order);
+
+    return { message: 'Order reset for reassignment' };
+  }
 }
