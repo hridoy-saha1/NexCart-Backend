@@ -6,10 +6,15 @@ import * as express from 'express';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.use('/uploads', express.static('uploads'));
-//   const dataSource = app.get(DataSource);
-//   await dataSource.query(`
-//   DELETE FROM "admin" WHERE email = 'nurhasin910@gmail.com';
-// `);
+  const dataSource = app.get(DataSource);
+  // await dataSource.query(`
+  // DELETE FROM "admin" WHERE email = 'neymar10jr@gmail.com';
+  // `);
+  await dataSource.query(`
+  UPDATE "admin"
+  SET "isApproved" = true,
+      "isActive" = true
+`);
   // Enable CORS
   app.enableCors({
     origin: 'http://localhost:4000', // Allow only your frontend
