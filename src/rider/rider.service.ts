@@ -145,7 +145,7 @@ export class RiderService {
   // ==============================
   async getAllRiders(): Promise<Rider[]> {
     return await this.riderRepository.find({
-      relations: ['reviews', 'orders', 'admins'],
+      relations: ['reviews', 'orders'],
     });
   }
 

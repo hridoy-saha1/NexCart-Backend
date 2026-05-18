@@ -4,9 +4,10 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  // ManyToMany,
+  // JoinTable,
 } from 'typeorm';
-import { ManyToMany, JoinTable } from 'typeorm';
-import { Rider } from 'src/rider/rider.entity';
+// import { Rider } from '../../rider/rider.entity';
 
 @Entity('admin')
 export class AdminEntity {
@@ -26,9 +27,22 @@ export class AdminEntity {
   @Column({ type: 'varchar', length: 255 })
   password: string;
 
-  // ACTIVE STATUS (default true)
+  @Column({ default: false })
+  isApproved: boolean;
+
+  // ACTIVE STATUS
   @Column({ default: false })
   isActive: boolean;
+
+  // OTP fields
+  // @Column({ type: 'varchar', length: 6, nullable: true })
+  // otp: string | null;
+
+  // @Column({ type: 'timestamp', nullable: true })
+  // otpExpiry: Date | null;
+
+  // @Column({ default: false })
+  // isVerified: boolean;
 
   // CREATED TIME
   @CreateDateColumn()
@@ -39,7 +53,7 @@ export class AdminEntity {
   updatedAt: Date;
 
   // Admin & Rider
-  @ManyToMany(() => Rider, (rider) => rider.admins)
-  @JoinTable()
-  riders: Rider[];
+  // @ManyToMany(() => Rider, (rider) => rider.admins)
+  // @JoinTable()
+  // riders: Rider[];
 }
