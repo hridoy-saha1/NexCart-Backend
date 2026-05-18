@@ -12,6 +12,7 @@ import { Order } from 'src/customer/order.entity';
 import { Rider } from 'src/rider/rider.entity';
 import * as bcrypt from 'bcrypt';
 import { PusherService } from 'src/pusher/pusher.service';
+import { Delivery, DeliveryStatus } from 'src/rider/delivery.entity';
 
 @Injectable()
 export class AdminService {
@@ -25,6 +26,8 @@ export class AdminService {
     @InjectRepository(Order)
     private readonly orderRepo: Repository<Order>,
     private readonly pusherService: PusherService,
+    @InjectRepository(Delivery)
+    private deliveryRepo: Repository<Delivery>,
   ) {}
 
   // CREATE
@@ -106,35 +109,75 @@ export class AdminService {
     return this.adminRepo.save(admin);
   }
 
-  // Assign Rider to Order
+  // // Assign Rider to Order
+  // async assignRiderToOrder(orderId: number, riderId: number): Promise<Order> {
+  //   const order = await this.orderRepo.findOneBy({ id: orderId });
+  //   if (!order) throw new NotFoundException('Order not found');
+
+  //   const rider = await this.riderRepo.findOneBy({ id: riderId });
+  //   if (!rider) throw new NotFoundException('Rider not found');
+
+  //   if (order.rider) {
+  //     throw new BadRequestException('Rider already assigned to this order');
+  //   }
+
+  //   order.rider = rider;
+
+  //   order.status = 'rider_assigned';
+
+  //   const updatedOrder = await this.orderRepo.save(order);
+
+  //   await this.pusherService.trigger(
+  //     'order-channel',
+
+  //     'order-status-updated',
+
+  //     {
+  //       orderId: order.id,
+
+  //       status: updatedOrder.status,
+  //     },
+  //   );
+
+  //   return updatedOrder;
+  // }
+
   async assignRiderToOrder(orderId: number, riderId: number): Promise<Order> {
     const order = await this.orderRepo.findOneBy({ id: orderId });
-    if (!order) throw new NotFoundException('Order not found');
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
 
     const rider = await this.riderRepo.findOneBy({ id: riderId });
-    if (!rider) throw new NotFoundException('Rider not found');
+
+    if (!rider) {
+      throw new NotFoundException('Rider not found');
+    }
 
     if (order.rider) {
       throw new BadRequestException('Rider already assigned to this order');
     }
 
+    // assign rider
     order.rider = rider;
-
     order.status = 'rider_assigned';
 
     const updatedOrder = await this.orderRepo.save(order);
 
-    await this.pusherService.trigger(
-      'order-channel',
+    // CREATE DELIVERY REQUEST
+    const delivery = this.deliveryRepo.create({
+      order,
+      rider,
+      status: DeliveryStatus.PENDING,
+    });
 
-      'order-status-updated',
+    await this.deliveryRepo.save(delivery);
 
-      {
-        orderId: order.id,
-
-        status: updatedOrder.status,
-      },
-    );
+    await this.pusherService.trigger('order-channel', 'order-status-updated', {
+      orderId: order.id,
+      status: updatedOrder.status,
+    });
 
     return updatedOrder;
   }
