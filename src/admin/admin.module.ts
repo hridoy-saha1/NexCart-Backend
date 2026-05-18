@@ -35,6 +35,14 @@ import { PusherModule } from '../pusher/pusher.module';
         },
       },
     }),
+import { Rider } from 'src/rider/rider.entity';
+import { Order } from 'src/customer/order.entity';
+import { PusherModule } from 'src/pusher/pusher.module';
+import { Delivery } from 'src/rider/delivery.entity';
+
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([AdminEntity, Rider, Order, Delivery]),
     PusherModule,
   ],
   controllers: [AdminController],

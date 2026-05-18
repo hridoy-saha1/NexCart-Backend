@@ -17,6 +17,7 @@ import { JwtService } from '@nestjs/jwt';
 import { MailerService } from '@nestjs-modules/mailer';
 // import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { PusherService } from '../pusher/pusher.service';
+import { Delivery, DeliveryStatus } from 'src/rider/delivery.entity';
 
 @Injectable()
 export class AdminService {
@@ -34,6 +35,8 @@ export class AdminService {
 
     private readonly mailerService: MailerService,
     private readonly pusherService: PusherService,
+    @InjectRepository(Delivery)
+    private deliveryRepo: Repository<Delivery>,
   ) {}
 
   // OTP Generator
@@ -371,18 +374,57 @@ export class AdminService {
   //   return this.adminRepo.save(admin);
   // }
 
-  // Assign Rider to Order
+  // // Assign Rider to Order
+  // async assignRiderToOrder(orderId: number, riderId: number): Promise<Order> {
+  //   const order = await this.orderRepo.findOneBy({ id: orderId });
+  //   if (!order) throw new NotFoundException('Order not found');
+
+  //   const rider = await this.riderRepo.findOneBy({ id: riderId });
+  //   if (!rider) throw new NotFoundException('Rider not found');
+
+  //   if (order.rider) {
+  //     throw new BadRequestException('Rider already assigned to this order');
+  //   }
+
+  //   order.rider = rider;
+
+  //   order.status = 'rider_assigned';
+
+  //   const updatedOrder = await this.orderRepo.save(order);
+
+  //   await this.pusherService.trigger(
+  //     'order-channel',
+
+  //     'order-status-updated',
+
+  //     {
+  //       orderId: order.id,
+
+  //       status: updatedOrder.status,
+  //     },
+  //   );
+
+  //   return updatedOrder;
+  // }
+
   async assignRiderToOrder(orderId: number, riderId: number): Promise<Order> {
     const order = await this.orderRepo.findOneBy({ id: orderId });
-    if (!order) throw new NotFoundException('Order not found');
+
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
 
     const rider = await this.riderRepo.findOneBy({ id: riderId });
-    if (!rider) throw new NotFoundException('Rider not found');
+
+    if (!rider) {
+      throw new NotFoundException('Rider not found');
+    }
 
     if (order.rider) {
       throw new BadRequestException('Rider already assigned to this order');
     }
 
+    // assign rider
     order.rider = rider;
     order.status = 'rider_assigned';
 
@@ -397,6 +439,19 @@ export class AdminService {
         status: updatedOrder.status,
       },
     );
+    // CREATE DELIVERY REQUEST
+    const delivery = this.deliveryRepo.create({
+      order,
+      rider,
+      status: DeliveryStatus.PENDING,
+    });
+
+    await this.deliveryRepo.save(delivery);
+
+    await this.pusherService.trigger('order-channel', 'order-status-updated', {
+      orderId: order.id,
+      status: updatedOrder.status,
+    });
 
     return updatedOrder;
   }

@@ -240,14 +240,26 @@ export class SellerController {
   }
 
   @UseGuards(JwtAuthGuard)
-@Patch('order-items/:id/status')
-updateOrderItemStatus(
-  @Param('id', ParseIntPipe) itemId: number,
-  @Body('status') status: SellerOrderItemStatus,
-  @Req() req: any,
-) {
-  const sellerId = req.user.id;
+  @Patch('order-items/:id/status')
+  updateOrderItemStatus(
+    @Param('id', ParseIntPipe) itemId: number,
+    @Body('status') status: SellerOrderItemStatus,
+    @Req() req: any,
+  ) {
+    const sellerId = req.user.id;
 
-  return this.sellerService.updateOrderItemStatus(itemId, sellerId, status);
-}
+    return this.sellerService.updateOrderItemStatus(itemId, sellerId, status);
+  }
+
+  //for dynamic route of orders
+  @Get('orders/:id')
+  @UseGuards(JwtAuthGuard)
+  getSellerOrderById(
+    @Param('id', ParseIntPipe) orderId: number,
+    @Req() req: any,
+  ) {
+    const sellerId = req.user.id;
+
+    return this.sellerService.getSellerOrderById(orderId, sellerId);
+  }
 }
