@@ -12,17 +12,12 @@ import { UpdateAdminDto } from './dto/update-admin.dto';
 import { Order } from '../customer/order.entity';
 import { Rider } from '../rider/rider.entity';
 import * as bcrypt from 'bcrypt';
-<<<<<<< HEAD
 import { LoginAdminDto } from './dto/login-admin.dto';
 import { JwtService } from '@nestjs/jwt';
 import { MailerService } from '@nestjs-modules/mailer';
 // import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { PusherService } from '../pusher/pusher.service';
-import { DeliveryStatus } from '../rider/delivery.entity';
-=======
-import { PusherService } from 'src/pusher/pusher.service';
 import { Delivery, DeliveryStatus } from 'src/rider/delivery.entity';
->>>>>>> 13c97e3aa88ca983ed3a3478e6b4061f37cb15a8
 
 @Injectable()
 export class AdminService {
@@ -435,6 +430,15 @@ export class AdminService {
 
     const updatedOrder = await this.orderRepo.save(order);
 
+    await this.pusherService.trigger(
+      'order-channel',
+      'order-status-updated',
+
+      {
+        orderId: order.id,
+        status: updatedOrder.status,
+      },
+    );
     // CREATE DELIVERY REQUEST
     const delivery = this.deliveryRepo.create({
       order,
