@@ -145,7 +145,7 @@ export class RiderService {
   // ==============================
   async getAllRiders(): Promise<Rider[]> {
     return await this.riderRepository.find({
-      relations: ['reviews', 'orders', 'admins'],
+      relations: ['reviews', 'orders'],
     });
   }
 
@@ -319,20 +319,20 @@ export class RiderService {
       },
     );
 
-    if (status === 'delivered') {
-      const existingDelivery = await this.deliveryRepository.findOne({
-        where: { order: { id: orderId } },
-      });
+    // if (status === 'delivered') {
+    //   const existingDelivery = await this.deliveryRepository.findOne({
+    //     where: { order: { id: orderId } },
+    //   });
 
-      if (!existingDelivery) {
-        const delivery = this.deliveryRepository.create({
-          order,
-          rider,
-        });
+    //   if (!existingDelivery) {
+    //     const delivery = this.deliveryRepository.create({
+    //       order,
+    //       rider,
+    //     });
 
-        await this.deliveryRepository.save(delivery);
-      }
-    }
+    //     await this.deliveryRepository.save(delivery);
+    //   }
+    // }
 
     return updatedOrder;
   }
@@ -379,28 +379,27 @@ export class RiderService {
     });
   }
 
-async markOrderDelivered(deliveryId: number) {
-  const delivery = await this.deliveryRepository.findOne({
-    where: { id: deliveryId },
-    relations: ['order'],
-  });
+  async markOrderDelivered(deliveryId: number) {
+    const delivery = await this.deliveryRepository.findOne({
+      where: { id: deliveryId },
+      relations: ['order'],
+    });
 
-  if (!delivery) {
-    throw new NotFoundException('Delivery not found');
+    if (!delivery) {
+      throw new NotFoundException('Delivery not found');
+    }
+
+    // update order status
+    delivery.order.status = 'delivered';
+
+    await this.orderRepository.save(delivery.order);
+
+    // optional but recommended: update delivery too
+    delivery.status = DeliveryStatus.ACCEPTED; // or you can add DELIVERED enum
+    await this.deliveryRepository.save(delivery);
+
+    return {
+      message: 'Order marked as delivered',
+    };
   }
-
-  // update order status
-  delivery.order.status = 'delivered';
-
-  await this.orderRepository.save(delivery.order);
-
-  // optional but recommended: update delivery too
-  delivery.status = DeliveryStatus.ACCEPTED; // or you can add DELIVERED enum
-  await this.deliveryRepository.save(delivery);
-
-  return {
-    message: 'Order marked as delivered',
-  };
-}
-
 }

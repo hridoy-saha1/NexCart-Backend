@@ -216,6 +216,7 @@ export class SellerService {
       relations: {
         products: true,
         shop: true,
+        orderItems: true,
       },
     });
 
@@ -748,6 +749,37 @@ export class SellerService {
     return Array.from(grouped.values());
   }
 
+  // async updateOrderItemStatus(
+  //   itemId: number,
+  //   sellerId: number,
+  //   status: SellerOrderItemStatus,
+  // ) {
+  //   const item = await this.orderItemRepository.findOne({
+  //     where: {
+  //       id: itemId,
+  //       seller: { id: sellerId },
+  //     },
+
+  //     relations: ['order'],
+  //   });
+
+  //   if (!item) {
+  //     throw new Error('Order item not found');
+  //   }
+
+  //   // UPDATE SELLER ITEM STATUS
+  //   item.status = status;
+
+  //   await this.orderItemRepository.save(item);
+
+  //   // AUTO UPDATE MAIN ORDER STATUS
+  //   await this.updateMainOrderStatus(item.order.id);
+
+  //   return {
+  //     message: 'Order item updated successfully',
+  //   };
+  // }
+
   async updateOrderItemStatus(
     itemId: number,
     sellerId: number,
@@ -758,20 +790,50 @@ export class SellerService {
         id: itemId,
         seller: { id: sellerId },
       },
-
-      relations: ['order'],
+      relations: ['order', 'product'],
     });
 
     if (!item) {
       throw new Error('Order item not found');
     }
 
-    // UPDATE SELLER ITEM STATUS
+    // Prevent duplicate stock reduction
+    const previousStatus = item.status;
+
+    /**
+     * ACCEPTED
+     * Reduce stock only once
+     */
+    if (
+      status === SellerOrderItemStatus.ACCEPTED &&
+      previousStatus !== SellerOrderItemStatus.ACCEPTED
+    ) {
+      item.product.quantity =
+        Number(item.product.quantity) - Number(item.quantity);
+
+      await this.productRepository.save(item.product);
+    }
+
+    /**
+     * OPTIONAL:
+     * Restore stock if accepted -> rejected/pending
+     */
+    if (
+      previousStatus === SellerOrderItemStatus.ACCEPTED &&
+      status !== SellerOrderItemStatus.ACCEPTED
+    ) {
+      item.product.quantity =
+        Number(item.product.quantity) + Number(item.quantity);
+
+      await this.productRepository.save(item.product);
+    }
+
+    // UPDATE ITEM STATUS
     item.status = status;
 
     await this.orderItemRepository.save(item);
 
-    // AUTO UPDATE MAIN ORDER STATUS
+    // UPDATE MAIN ORDER STATUS
     await this.updateMainOrderStatus(item.order.id);
 
     return {
@@ -843,4 +905,43 @@ export class SellerService {
       },
     );
   }
+
+ async getSellerOrderById(
+  orderId: number,
+  sellerId: number,
+) {
+  const order = await this.orderRepository.findOne({
+    where: {
+      id: orderId,
+    },
+
+    relations: [
+      'customer',
+      'orderItems',
+      'orderItems.product',
+      'orderItems.seller',
+    ],
+  });
+
+  if (!order) {
+    throw new Error('Order not found');
+  }
+
+  // Keep only this seller's items
+  const sellerItems = order.orderItems.filter(
+    (item) => item.seller?.id === sellerId,
+  );
+
+  // Security check
+  if (sellerItems.length === 0) {
+    throw new Error(
+      'You are not authorized to view this order',
+    );
+  }
+
+  return {
+    ...order,
+    orderItems: sellerItems,
+  };
+}
 }
