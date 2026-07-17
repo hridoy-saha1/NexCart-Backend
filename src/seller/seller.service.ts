@@ -906,42 +906,47 @@ export class SellerService {
     );
   }
 
- async getSellerOrderById(
-  orderId: number,
-  sellerId: number,
-) {
-  const order = await this.orderRepository.findOne({
-    where: {
-      id: orderId,
-    },
+  async getSellerOrderById(orderId: number, sellerId: number) {
+    // const order = await this.orderRepository.findOne({
+    //   where: {
+    //     id: orderId,
+    //   },
+    const order = await this.orderRepository.findOne({
+      where: {
+        id: orderId,
+      },
 
-    relations: [
-      'customer',
-      'orderItems',
-      'orderItems.product',
-      'orderItems.seller',
-    ],
-  });
+      relations: [
+        'customer',
+        'orderItems',
+        'orderItems.product',
+        'orderItems.seller',
+      ],
+    });
 
-  if (!order) {
-    throw new Error('Order not found');
-  }
+    if (!order) {
+      throw new Error('Order not found');
+    }
 
-  // Keep only this seller's items
-  const sellerItems = order.orderItems.filter(
-    (item) => item.seller?.id === sellerId,
-  );
+    // console.log(order.orderItems);
 
-  // Security check
-  if (sellerItems.length === 0) {
-    throw new Error(
-      'You are not authorized to view this order',
+    const sellerIdNum = Number(sellerId);
+
+    const sellerItems = order.orderItems.filter(
+      (item) => item.seller?.id === sellerIdNum,
     );
-  }
+    // Security check
+    const isSellerInOrder = order.orderItems.some(
+      (item) => item.seller?.id === sellerIdNum,
+    );
 
-  return {
-    ...order,
-    orderItems: sellerItems,
-  };
-}
+    if (!isSellerInOrder) {
+      throw new Error('Unauthorized');
+    }
+
+    return {
+      ...order,
+      orderItems: sellerItems,
+    };
+  }
 }
