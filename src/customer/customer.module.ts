@@ -17,6 +17,7 @@ import { ConfigModule } from '@nestjs/config';
 import { MailService } from './mail.service';
 import { PassportModule } from '@nestjs/passport';
 import { PusherModule } from 'src/pusher/pusher.module';
+import { PaymentModule } from 'src/payment/payment.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { PusherModule } from 'src/pusher/pusher.module';
       Order,
       OrderItem,
     ]),
+    PaymentModule,
     PusherModule,
 
     PusherModule,
