@@ -431,6 +431,18 @@ export class AdminService {
     const updatedOrder = await this.orderRepo.save(order);
 
     await this.pusherService.trigger(
+      `rider-${rider.id}-channel`,
+
+      'rider-assigned-order',
+
+      {
+        orderId: order.id,
+
+        message: 'New delivery assigned',
+      },
+    );
+
+    await this.pusherService.trigger(
       'order-channel',
       'order-status-updated',
 

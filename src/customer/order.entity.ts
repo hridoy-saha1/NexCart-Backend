@@ -43,6 +43,22 @@ export class Order {
   })
   paymentMethod: string;
 
+  // Payment lifecycle — separate from order fulfillment status above
+  @Column({
+    type: 'enum',
+    enum: ['unpaid', 'paid', 'failed', 'cancelled'],
+    default: 'unpaid',
+  })
+  paymentStatus: string;
+
+  // SSLCommerz transaction id, set once a payment session is created
+  @Column({ nullable: true })
+  tranId: string;
+
+  // Timestamp of successful payment confirmation
+  @Column({ type: 'timestamp', nullable: true })
+  paidAt: Date;
+
   @Column('decimal', {
     precision: 10,
     scale: 2,
