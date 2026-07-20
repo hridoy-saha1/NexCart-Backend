@@ -17,6 +17,7 @@ import { MailService } from './mail.service';
 import { ProductEntity } from 'src/seller/entities/product.entity';
 import { profile } from 'console';
 import { PusherService } from 'src/pusher/pusher.service';
+import { PaymentService } from 'src/payment/payment.service';
 
 @Injectable()
 export class CustomerService {
@@ -36,6 +37,7 @@ export class CustomerService {
     private readonly jwtService: JwtService,
     private mailService: MailService,
     private readonly pusherService: PusherService,
+    private readonly paymentService: PaymentService,
   ) {}
   async createUser(dto: CreateCustomerDto): Promise<customerEntity> {
     try {
@@ -186,91 +188,68 @@ export class CustomerService {
 
   // Place order
   async placeOrder(customerId: number, paymentMethod: string) {
-    // GET CUSTOMER WITH CART
     const customer = await this.userRepository.findOne({
       where: { id: customerId },
-
       relations: ['cartItems', 'cartItems.product', 'cartItems.product.seller'],
     });
 
-    // CHECK CART
     if (!customer || customer.cartItems.length === 0) {
       throw new BadRequestException('Cart empty');
     }
 
-    // VALID PAYMENT METHODS
     const validMethods = ['cash', 'card', 'bkash', 'nagad'];
-
-    // CHECK PAYMENT METHOD
     if (!validMethods.includes(paymentMethod)) {
       throw new BadRequestException('Invalid payment method');
     }
 
-    // CALCULATE TOTAL
     let total = 0;
-
     for (const item of customer.cartItems) {
       total += Number(item.product.price) * Number(item.quantity);
     }
 
-    // CREATE ORDER
     const order = this.orderRepo.create({
       customer,
-
       paymentMethod,
-
       status: 'pending',
-
       totalAmount: total,
+      paymentStatus: paymentMethod === 'cash' ? 'unpaid' : 'unpaid', // both start unpaid; cash is settled on delivery
     });
 
-    // CREATE ORDER ITEMS
     order.orderItems = customer.cartItems.map((item) =>
       this.orderItemRepo.create({
         product: item.product,
-
         quantity: item.quantity,
-
         seller: item.product.seller,
-
         price: item.product.price,
       }),
     );
 
-    // SAVE ORDER
     await this.orderRepo.save(order);
-    await this.pusherService.trigger(
-      'seller-channel',
 
-      'new-order',
-
-      {
-        orderId: order.id,
-
-        message: 'New order received',
-      },
-    );
-    await this.pusherService.trigger(
-      'admin-channel',
-
-      'admin-new-order',
-
-      {
-        orderId: order.id,
-
-        message: 'New customer order placed',
-      },
-    );
-
-    // CLEAR CART
-    await this.cartRepo.delete({
-      customer,
+    await this.pusherService.trigger('seller-channel', 'new-order', {
+      orderId: order.id,
+      message: 'New order received',
+    });
+    await this.pusherService.trigger('admin-channel', 'admin-new-order', {
+      orderId: order.id,
+      message: 'New customer order placed',
     });
 
-    // RETURN ORDER
+    await this.cartRepo.delete({ customer });
+
+    // If it's an online payment method, generate the SSLCommerz session now
+    if (paymentMethod !== 'cash') {
+      const session = await this.paymentService.createSession(order.id);
+      return {
+        message: 'Order placed, redirect to payment',
+        order,
+        paymentUrl: session.url,
+      };
+    }
+
+    // Cash orders skip straight to normal flow
     return {
       message: 'Order placed successfully',
-
       order,
     };
   }

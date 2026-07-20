@@ -906,16 +906,14 @@ export class SellerService {
     );
   }
 
-  //for dynamic route in seller
   async getSellerOrderById(orderId: number, sellerId: number) {
+    // const order = await this.orderRepository.findOne({
+    //   where: {
+    //     id: orderId,
+    //   },
     const order = await this.orderRepository.findOne({
       where: {
         id: orderId,
-        orderItems: {
-          seller: {
-            id: sellerId,
-          },
-        },
       },
 
       relations: [
@@ -930,6 +928,25 @@ export class SellerService {
       throw new Error('Order not found');
     }
 
-    return order;
+    // console.log(order.orderItems);
+
+    const sellerIdNum = Number(sellerId);
+
+    const sellerItems = order.orderItems.filter(
+      (item) => item.seller?.id === sellerIdNum,
+    );
+    // Security check
+    const isSellerInOrder = order.orderItems.some(
+      (item) => item.seller?.id === sellerIdNum,
+    );
+
+    if (!isSellerInOrder) {
+      throw new Error('Unauthorized');
+    }
+
+    return {
+      ...order,
+      orderItems: sellerItems,
+    };
   }
 }

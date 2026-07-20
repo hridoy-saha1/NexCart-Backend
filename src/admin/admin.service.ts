@@ -440,6 +440,18 @@ export class AdminService {
     );
 
     await this.pusherService.trigger(
+      `rider-${rider.id}-channel`,
+
+      'rider-assigned-order',
+
+      {
+        orderId: order.id,
+
+        message: 'New delivery assigned',
+      },
+    );
+
+    await this.pusherService.trigger(
       'order-channel',
       'order-status-updated',
 
