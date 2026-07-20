@@ -25,6 +25,11 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
+  @Get('public-stats')
+  getPublicHeroStats() {
+    return this.adminService.getPublicHeroStats();
+  }
+
   @Get('orders')
   @UseGuards(JwtAuthGuard)
   getAdminOrders() {
