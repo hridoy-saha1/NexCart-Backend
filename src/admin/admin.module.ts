@@ -15,7 +15,7 @@ import { Delivery } from '../rider/delivery.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([AdminEntity, Rider, Order, Delivery]),
+    TypeOrmModule.forFeature([AdminEntity,SellerEntity, Rider, Order, Delivery]),
     PusherModule,
     //  LOAD ENV FILE
     ConfigModule.forRoot({

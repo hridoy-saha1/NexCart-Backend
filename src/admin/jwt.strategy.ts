@@ -1,9 +1,39 @@
-import { Injectable } from '@nestjs/common';
+// import { Injectable } from '@nestjs/common';
+// import { PassportStrategy } from '@nestjs/passport';
+// import { ExtractJwt, Strategy } from 'passport-jwt';
+
+// @Injectable()
+// export class JwtStrategy extends PassportStrategy(Strategy) {
+//   constructor() {
+//     const key = process.env.JWT_SECRET;
+
+//     if (!key) {
+//       throw new Error('JWT_SECRET is not defined');
+//     }
+
+//     super({
+//       jsonWebTokenOptions: {
+//         ignoreNotBefore: true, // Ignore "nbf" claim to prevent "Token not active" errors
+//       },
+//       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+//       secretOrKey: key,
+//     });
+//   }
+
+//   async validate(payload: any) {
+//     return {
+//       adminId: payload.sub,
+//       email: payload.email,
+//     };
+//   }
+// }
+
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
+export class JwtStrategy extends PassportStrategy(Strategy, 'admin-jwt') {
   constructor() {
     const key = process.env.JWT_SECRET;
 
@@ -12,15 +42,24 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     super({
+      jsonWebTokenOptions: {
+        ignoreNotBefore: true,
+      },
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: key,
+      ignoreExpiration: false,
     });
   }
 
   async validate(payload: any) {
+    if (payload.role !== 'admin') {
+      throw new UnauthorizedException('Admin token required');
+    }
+
     return {
       id: payload.sub,
       email: payload.email,
+      role: payload.role,
     };
   }
 }

@@ -18,6 +18,7 @@ import { MailerService } from '@nestjs-modules/mailer';
 // import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { PusherService } from '../pusher/pusher.service';
 import { Delivery, DeliveryStatus } from 'src/rider/delivery.entity';
+import { SellerEntity } from '../seller/entities/seller.entity';
 
 @Injectable()
 export class AdminService {
@@ -37,7 +38,9 @@ export class AdminService {
     private readonly pusherService: PusherService,
     @InjectRepository(Delivery)
     private deliveryRepo: Repository<Delivery>,
-  ) { }
+    @InjectRepository(SellerEntity)
+    private readonly sellerRepo: Repository<SellerEntity>,
+  ) {}
 
   // OTP Generator
   // generateOtp(): string {
@@ -229,9 +232,14 @@ export class AdminService {
     }
 
     // CREATE TOKEN
+    // const payload = {
+    //   sub: admin.id,
+    //   email: admin.email,
+    // };
     const payload = {
       sub: admin.id,
       email: admin.email,
+      role: 'admin',
     };
 
     const access_token = this.jwtService.sign(payload);
@@ -429,15 +437,6 @@ export class AdminService {
     order.status = 'rider_assigned';
 
     const updatedOrder = await this.orderRepo.save(order);
-    await this.pusherService.trigger(
-      `rider-${rider.id}-channel`,
-      'rider-assigned-order',
-
-      {
-        orderId: order.id,
-        message: 'New delivery assigned',
-      },
-    );
 
     await this.pusherService.trigger(
       `rider-${rider.id}-channel`,
@@ -519,5 +518,110 @@ export class AdminService {
     await this.orderRepo.save(order);
 
     return { message: 'Order reset for reassignment' };
+  }
+
+  //dipta added
+  async getAdminOrders() {
+    return await this.orderRepo.find({
+      relations: [
+        'customer',
+        'orderItems',
+        'orderItems.product',
+        'orderItems.seller',
+        'orderItems.seller.shop',
+        'rider',
+      ],
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+  }
+
+  async getAdminSellers() {
+    const sellers = await this.sellerRepo.find({
+      relations: ['shop', 'products'],
+      order: {
+        id: 'ASC',
+      },
+    });
+
+    const safeSellers = sellers.map((seller) => {
+      const { password, ...safeSeller } = seller as any;
+      return safeSeller;
+    });
+
+    return {
+      message: 'All sellers retrieved successfully',
+      data: safeSellers,
+    };
+  }
+
+  async getAdminSellerById(id: number) {
+    const seller = await this.sellerRepo.findOne({
+      where: { id },
+      relations: ['shop', 'products', 'orderItems'],
+    });
+
+    if (!seller) {
+      throw new NotFoundException('Seller not found');
+    }
+
+    const { password, ...safeSeller } = seller as any;
+
+    return {
+      message: 'Seller retrieved successfully',
+      data: safeSeller,
+    };
+  }
+
+  async deleteAdminSeller(id: number) {
+    const seller = await this.sellerRepo.findOne({
+      where: { id },
+    });
+
+    if (!seller) {
+      throw new NotFoundException('Seller not found');
+    }
+
+    await this.sellerRepo.remove(seller);
+
+    return {
+      message: 'Seller deleted successfully',
+    };
+  }
+
+  async getAdminRiders() {
+    return await this.riderRepo.find({
+      order: {
+        id: 'ASC',
+      },
+    });
+  }
+
+  async getAdminAvailableRiders() {
+    return await this.riderRepo.find({
+      where: {
+        status: 'available' as any,
+      },
+      order: {
+        id: 'ASC',
+      },
+    });
+  }
+
+  async deleteAdminRider(id: number) {
+    const rider = await this.riderRepo.findOne({
+      where: { id },
+    });
+
+    if (!rider) {
+      throw new NotFoundException('Rider not found');
+    }
+
+    await this.riderRepo.remove(rider);
+
+    return {
+      message: 'Rider deleted successfully',
+    };
   }
 }

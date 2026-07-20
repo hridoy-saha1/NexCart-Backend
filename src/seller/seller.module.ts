@@ -53,7 +53,7 @@ import { PusherModule } from 'src/pusher/pusher.module';
     // }),
     MailModule,
     JwtModule.register({
-      secret: 'mySecretKey', //
+      secret: process.env.JWT_SECRET, //
       signOptions: { expiresIn: '1h' },
     }),
     TypeOrmModule.forFeature([
