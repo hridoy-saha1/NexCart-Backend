@@ -82,6 +82,11 @@ export class SellerController {
     return this.sellerService.getAllSellers();
   }
 
+  @Get('public')
+  getPublicSellers() {
+    return this.sellerService.getPublicSellers();
+  }
+
   @Get('products')
   getAllProducts() {
     return this.sellerService.getAllProducts();

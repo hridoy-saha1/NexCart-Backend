@@ -949,4 +949,50 @@ export class SellerService {
       orderItems: sellerItems,
     };
   }
+  // added to show seller details to homepage
+  async getPublicSellers(): Promise<object> {
+    const sellers = await this.sellerRepository.find({
+      relations: {
+        products: true,
+        shop: true,
+      },
+      order: {
+        id: 'ASC',
+      },
+    });
+
+    const publicSellers = sellers.map((seller) => {
+      return {
+        id: seller.id,
+        name: seller.name,
+        email: seller.email,
+        phone: seller.phone,
+
+        shop: seller.shop
+          ? {
+              id: seller.shop.id,
+              shopName: seller.shop.shopName,
+              shopAddress: seller.shop.shopAddress,
+            }
+          : null,
+
+        products: seller.products
+          ? seller.products.map((product) => ({
+              id: product.id,
+              productName: product.productName,
+              category: product.category,
+              description: product.description,
+              price: product.price,
+              quantity: product.quantity,
+              productImage: product.productImage,
+            }))
+          : [],
+      };
+    });
+
+    return {
+      message: 'Public sellers retrieved successfully',
+      data: publicSellers,
+    };
+  }
 }
