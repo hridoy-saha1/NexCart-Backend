@@ -11,7 +11,7 @@ import { PassportModule } from '@nestjs/passport';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule } from '@nestjs/config';
 import { PusherModule } from '../pusher/pusher.module';
-import { Delivery } from 'src/rider/delivery.entity';
+import { Delivery } from '../rider/delivery.entity';
 
 @Module({
   imports: [
