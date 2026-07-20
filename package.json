@@ -29,6 +29,7 @@
     "@nestjs/platform-express": "^11.1.14",
     "@nestjs/serve-static": "^5.0.5",
     "@nestjs/typeorm": "^11.0.0",
+    "axios": "^1.18.1",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
@@ -43,6 +44,7 @@
     "react-hot-toast": "^2.6.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "sslcommerz-lts": "^1.2.0",
     "typeorm": "^0.3.28"
   },
   "devDependencies": {
