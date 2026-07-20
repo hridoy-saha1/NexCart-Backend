@@ -624,4 +624,37 @@ export class AdminService {
       message: 'Rider deleted successfully',
     };
   }
+
+  async getPublicHeroStats() {
+    const [orders, sellers, riders, availableRiders] = await Promise.all([
+      this.orderRepo.find({
+        select: ['id', 'totalAmount', 'paymentStatus', 'status'],
+      }),
+      this.sellerRepo.count(),
+      this.riderRepo.count(),
+      this.riderRepo.count({
+        where: {
+          status: 'available' as any,
+        },
+      }),
+    ]);
+
+    const revenue = orders
+      .filter(
+        (order) =>
+          order.paymentStatus === 'paid' || order.status === 'delivered',
+      )
+      .reduce((total, order) => total + Number(order.totalAmount || 0), 0);
+
+    return {
+      message: 'Public hero stats loaded successfully',
+      data: {
+        orders: orders.length,
+        sellers,
+        riders,
+        availableRiders,
+        revenue,
+      },
+    };
+  }
 }
