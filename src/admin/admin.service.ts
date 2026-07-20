@@ -37,7 +37,7 @@ export class AdminService {
     private readonly pusherService: PusherService,
     @InjectRepository(Delivery)
     private deliveryRepo: Repository<Delivery>,
-  ) {}
+  ) { }
 
   // OTP Generator
   // generateOtp(): string {
@@ -429,6 +429,15 @@ export class AdminService {
     order.status = 'rider_assigned';
 
     const updatedOrder = await this.orderRepo.save(order);
+    await this.pusherService.trigger(
+      `rider-${rider.id}-channel`,
+      'rider-assigned-order',
+
+      {
+        orderId: order.id,
+        message: 'New delivery assigned',
+      },
+    );
 
     await this.pusherService.trigger(
       'order-channel',
