@@ -12,10 +12,11 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule } from '@nestjs/config';
 import { PusherModule } from '../pusher/pusher.module';
 import { Delivery } from 'src/rider/delivery.entity';
+import { SellerEntity } from '../seller/entities/seller.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([AdminEntity, Rider, Order, Delivery]),
+    TypeOrmModule.forFeature([AdminEntity,SellerEntity, Rider, Order, Delivery]),
     PusherModule,
     //  LOAD ENV FILE
     ConfigModule.forRoot({

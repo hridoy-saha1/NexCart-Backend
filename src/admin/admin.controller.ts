@@ -25,6 +25,48 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
+  @Get('orders')
+  @UseGuards(JwtAuthGuard)
+  getAdminOrders() {
+    return this.adminService.getAdminOrders();
+  }
+
+  @Get('sellers')
+  @UseGuards(JwtAuthGuard)
+  getAdminSellers() {
+    return this.adminService.getAdminSellers();
+  }
+
+  @Get('sellers/:id')
+  @UseGuards(JwtAuthGuard)
+  getAdminSellerById(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.getAdminSellerById(id);
+  }
+
+  @Delete('sellers/:id')
+  @UseGuards(JwtAuthGuard)
+  deleteAdminSeller(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.deleteAdminSeller(id);
+  }
+
+  @Get('riders')
+  @UseGuards(JwtAuthGuard)
+  getAdminRiders() {
+    return this.adminService.getAdminRiders();
+  }
+
+  @Get('riders/available')
+  @UseGuards(JwtAuthGuard)
+  getAdminAvailableRiders() {
+    return this.adminService.getAdminAvailableRiders();
+  }
+
+  @Delete('riders/:id')
+  @UseGuards(JwtAuthGuard)
+  deleteAdminRider(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.deleteAdminRider(id);
+  }
+
   // LOGIN
   @Post('login')
   @UsePipes(
