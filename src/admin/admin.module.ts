@@ -12,6 +12,8 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule } from '@nestjs/config';
 import { PusherModule } from '../pusher/pusher.module';
 import { Delivery } from '../rider/delivery.entity';
+import { SellerEntity } from '../seller/entities/seller.entity';
+
 
 @Module({
   imports: [
